@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "tedlasso-strava",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-08-14",
+  "observability": { "enabled": true },
+  "triggers": {
+    "crons": ["0 */4 * * *"]
+  },
+  "kv_namespaces": [
+    { "binding": "STORE", "id": "PLACEHOLDER_REPLACED_AT_DEPLOY" }
+  ],
+  "vars": {
+    "TIMEZONE": "America/Los_Angeles",
+    "PRIVACY_TRIM_M": "250",
+    "REDIRECT_URI": "http://localhost:8787/auth/callback"
+  }
+}
