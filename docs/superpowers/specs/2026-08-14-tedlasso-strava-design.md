@@ -271,6 +271,49 @@ activity".
 **Accuracy rule:** never use the phrase "personal record" or "PR". Activity summaries do not
 contain best-effort data, so the defensible claim is "longest ride in 90 days".
 
+### 4.8 Route geometry
+
+`SummaryActivity` already includes `map.summary_polyline` (a Google-encoded polyline, and
+nullable) plus `start_latlng` / `end_latlng`. This is in the activity-list response we
+already fetch, so the map costs **zero additional API calls**.
+
+The last activity's route is drawn as an inline SVG path in the mood's accent color. There is
+no base map, no tile provider, no API key, and no client-side JavaScript.
+
+The whole pipeline is pure and runs in `src/domain/route.ts`:
+
+```
+decodePolyline(str)      -> LatLng[]        Google polyline algorithm, precision 5
+privacyTrim(points, m)   -> LatLng[]        drop both ends (see below)
+simplify(points, eps)    -> LatLng[]        Ramer–Douglas–Peucker, cap ~300 points
+project(points)          -> XY[]            equirectangular, x scaled by cos(mean latitude)
+toPath(xy, padding)      -> { pathD, viewBox }
+```
+
+**Privacy trim.** Walk in from the start dropping points until the cumulative haversine
+distance from the first point exceeds `PRIVACY_TRIM_M` (default 250), then do the same from
+the end. Routes typically begin and end at the athlete's home, and `activity:read_all`
+bypasses any Strava privacy zones the athlete has configured — so the untrimmed polyline
+would reveal more than their public Strava profile does. If fewer than 2 points survive the
+trim, the route is `null` and the no-route fallback renders instead.
+
+**Projection.** Equirectangular with `x = lng * cos(meanLat)` to prevent horizontal
+squashing, then fit to the viewBox preserving aspect ratio with uniform padding. Web Mercator
+is unnecessary at the scale of a single activity.
+
+**Where trimming happens is load-bearing.** Decode, trim, and simplify all run in the write
+path. Only the finished `pathD` string reaches `snapshot/current`. Untrimmed coordinates are
+never persisted in anything the site can serve, which makes the privacy trim a structural
+property rather than a render-time convention a later change could undo.
+
+**No-route fallback.** `summary_polyline` is null for indoor and manually-entered activities
+(treadmill, gym, manual swim). These render a designed block in the same frame — sport name
+set large with the duration — never an empty box.
+
+**Caption.** Distance, elevation gain, and sport type. Strava's `location_city` /
+`location_state` are frequently null, so the label renders only when present and its absence
+changes nothing about the layout.
+
 ## 5. Storage
 
 One KV namespace.
@@ -293,6 +336,14 @@ interface Snapshot {
   scores: { consistency: number; charge: number }
   reasons: string[]
   facts: PublicFacts
+  route: {
+    pathD: string          // already trimmed, simplified, projected
+    viewBox: string
+    distanceM: number
+    elevationM: number
+    sportType: string
+    locationLabel: string | null
+  } | null                 // null for indoor/manual activities, or if the trim consumed it
 }
 ```
 
@@ -332,10 +383,14 @@ Anatomy, top to bottom:
 2. The quote — by a wide margin the largest element on the page — with the character's name
    beneath in small caps.
 3. The GIF, beside the quote on wide screens and beneath it on narrow, bordered in the accent.
-4. A hairline rule, then the receipts: last activity name, sport, distance, and when; this
+4. The route map: an inline SVG of the last activity's path, stroked in the mood accent on
+   the newsprint background, in a ruled frame with a caption of distance, elevation, and
+   sport. No base map, no tiles, no JavaScript. Falls back to the designed no-route block for
+   indoor and manual activities.
+5. A hairline rule, then the receipts: last activity name, sport, distance, and when; this
    week's count against baseline; streak; days since. Set as a dense tabular block with
    lining numerals, deliberately tighter than the hero. That density contrast is the layout.
-5. Footer: "Powered by Strava" with link-back, the refresh timestamp, the next scheduled run,
+6. Footer: "Powered by Strava" with link-back, the refresh timestamp, the next scheduled run,
    and a staleness marker if any displayed GIF's `verifiedOn` is over 180 days old.
 
 Manual refresh swaps the quote and GIF in place without a page reload, after a tunable
@@ -366,6 +421,20 @@ gated in CI. Required cases include every override rule, every grid region, and:
 - an athlete with under 4 weeks of history (baseline fallback)
 - zero activities
 
+Route geometry (§4.8) gets its own fixture set, since it is the most arithmetic-heavy code in
+the repo:
+
+- `decodePolyline` against the canonical test vectors from Google's polyline documentation
+- the privacy trim removes at least `PRIVACY_TRIM_M` from **both** ends, verified by
+  recomputing haversine distance from the original endpoints
+- an out-and-back route whose start and end are the same point still has both ends trimmed
+- a route shorter than twice the trim distance yields `route: null`, not a stub path
+- a null `summary_polyline` yields `route: null` and the no-route fallback
+- projection preserves aspect ratio, and a route at high latitude is not horizontally stretched
+- simplification stays under the point cap and never drops the first or last surviving point
+- a snapshot never contains coordinates outside the trimmed set (asserted directly against
+  the serialized `pathD`, so a future refactor cannot silently reintroduce them)
+
 **Infrastructure — `@cloudflare/vitest-pool-workers` with a mocked Strava.** Required cases:
 
 - the rotated refresh token is written to KV before the access token is used
@@ -383,7 +452,8 @@ gated in CI. Required cases include every override rule, every grid region, and:
 
 Secrets: `STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET`, `STRAVA_ATHLETE_ID`, `SETUP_KEY`.
 
-Vars: `TIMEZONE` (default `America/Los_Angeles`), `REDIRECT_URI`.
+Vars: `TIMEZONE` (default `America/Los_Angeles`), `REDIRECT_URI`, `PRIVACY_TRIM_M`
+(default `250`; set to `0` to disable trimming entirely).
 
 ## 10. Decisions taken, with the reasoning
 
@@ -400,17 +470,32 @@ Vars: `TIMEZONE` (default `America/Los_Angeles`), `REDIRECT_URI`.
   Recovery becomes one click instead of a terminal session.
 - **No OAuth callback for visitors.** Single-athlete by design; the callback exists only for
   the owner and is gated twice.
+- **Inline SVG route over a tile-provider map.** The polyline is already in the data we
+  fetch, so drawing it ourselves costs nothing: no API key, no per-view request to a third
+  party, no client-side JavaScript, and no visitor data leaking to a tile host. It is also
+  fully unit-testable as a pure function, and looks far less generic than an embedded map —
+  which the project's UI rules require.
+- **Ghost trails deferred.** Overlaying all 90 days of routes was considered and set aside
+  for the first build. It needs outlier handling for travel and roughly triples the route
+  payload. Revisit once the single-route renderer is proven.
 
 ## 11. Accepted risk, flagged explicitly
 
 **The page is public and displays real activity data** — the last activity's name, sport,
-distance, and timing, plus workout frequency. Anyone with the URL can see it, and activity
-names sometimes contain location information. This is inherent to the request as specified
-and is accepted.
+distance, timing, workout frequency, and the shape of the route. Anyone with the URL can see
+it. The owner reviewed this on 2026-08-14 and accepted it, and asked for the map specifically.
 
-Two mitigations are available and cheap to add if wanted later: a `DETAIL_LEVEL` var that
-suppresses the activity name and exact distance while keeping the mood, or putting the whole
-site behind Cloudflare Access. Neither is in scope for the first build.
+The one mitigation that is **in** the first build is the privacy trim described in §4.8, on
+by default at 250m. It exists because `activity:read_all` bypasses Strava privacy zones, so
+an untrimmed route would publish the athlete's home address more precisely than their own
+Strava profile does. Setting `PRIVACY_TRIM_M=0` disables it; that is a deliberate choice, not
+a default anyone falls into.
+
+Residual exposure after the trim: the general neighborhood, the athlete's training schedule,
+and any location detail they typed into an activity name themselves. Two further mitigations
+remain available and cheap if wanted later — a `DETAIL_LEVEL` var that keeps the mood while
+suppressing the name, route, and exact distance, or putting the whole site behind Cloudflare
+Access. Neither is in scope for the first build.
 
 ## 12. Out of scope
 

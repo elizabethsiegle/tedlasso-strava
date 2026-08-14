@@ -55,4 +55,9 @@ Concretely, on this project:
   `verifiedOn` is older than 180 days as stale.
 - Never claim a "personal record." We only have 90 days of activity list data, so the honest
   claim is "longest ride in 90 days." Say what we can actually back.
+- Route polylines are privacy-trimmed at both ends in the *write* path, before anything is
+  persisted. The snapshot stores finished SVG path data, never raw coordinates. We request
+  `activity:read_all`, which bypasses Strava privacy zones, so an untrimmed route would
+  publish a home address more precisely than the athlete's own Strava profile does. Never
+  move trimming to render time, and never persist untrimmed coordinates "just in case."
 - Display "Powered by Strava" attribution with a link back, per Strava's brand guidelines.
