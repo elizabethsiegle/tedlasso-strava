@@ -415,19 +415,28 @@ describe("startOfDayMs", () => {
 });
 
 describe("addDaysMs across DST", () => {
-  it("crossing spring-forward keeps the same wall-clock hour", () => {
-    // US DST begins 2026-03-08. Local midnight before and after must stay midnight.
-    const before = startOfDayMs(Date.parse("2026-03-07T20:00:00Z"), LA);
+  // US DST 2026: begins Sunday March 8, ends Sunday November 1. The transition
+  // happens at 02:00 local, AFTER midnight — so the short and long days are
+  // Mar 8→9 and Nov 1→2, not the days before them.
+  it("crossing spring-forward keeps midnight at midnight over a 23-hour day", () => {
+    const before = startOfDayMs(Date.parse("2026-03-08T20:00:00Z"), LA);
     const after = addDaysMs(before, 1, LA);
-    expect(dayKey(after, LA)).toBe("2026-03-08");
+    expect(dayKey(before, LA)).toBe("2026-03-08");
+    expect(dayKey(after, LA)).toBe("2026-03-09");
     expect(after - before).toBe(23 * 60 * 60 * 1000); // the short day
   });
 
-  it("crossing fall-back keeps the same wall-clock hour", () => {
-    const before = startOfDayMs(Date.parse("2026-10-31T20:00:00Z"), LA);
+  it("crossing fall-back keeps midnight at midnight over a 25-hour day", () => {
+    const before = startOfDayMs(Date.parse("2026-11-01T20:00:00Z"), LA);
     const after = addDaysMs(before, 1, LA);
-    expect(dayKey(after, LA)).toBe("2026-11-01");
+    expect(dayKey(before, LA)).toBe("2026-11-01");
+    expect(dayKey(after, LA)).toBe("2026-11-02");
     expect(after - before).toBe(25 * 60 * 60 * 1000); // the long day
+  });
+
+  it("keeps an ordinary day at 24 hours", () => {
+    const before = startOfDayMs(Date.parse("2026-08-14T19:00:00Z"), LA);
+    expect(addDaysMs(before, 1, LA) - before).toBe(24 * 60 * 60 * 1000);
   });
 
   it("subtracts as well as adds", () => {
@@ -843,7 +852,7 @@ Extends the same `deriveFacts` function. The three fields Task 3 stubbed become 
 - `effort(a) = a.sufferScore ?? a.movingTimeS / 60`
 - `relEffortLast` = the fraction of *other* same-sport activities in the window with strictly lower effort. Needs at least `MIN_EFFORT_SAMPLES` (5) other same-sport activities; else retry against all other activities with the same threshold; else `NEUTRAL_EFFORT` (0.5).
 - `isLongest90` = the last activity's `distanceM` is strictly greater than every other same-sport activity's, with at least `MIN_RECORD_SAMPLES` (3) other same-sport activities.
-- `isFastest90` = the last activity's `averageSpeed` is strictly greater than every other same-sport activity whose `distanceM >= FASTEST_DISTANCE_GUARD * last.distanceM`, with at least 3 such others.
+- `isFastest90` = the last activity's `averageSpeed` is strictly greater than every other same-sport activity whose distance falls in the **symmetric** band `FASTEST_DISTANCE_GUARD * last.distanceM <= o.distanceM <= last.distanceM / FASTEST_DISTANCE_GUARD`, with at least 3 such others. The band must be symmetric: a one-sided `>=` filter lets a 1km sprint beat every 10km run on speed, which is the exact case the guard exists to prevent.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -955,6 +964,26 @@ describe("isFastest90", () => {
     ];
     expect(deriveFacts(acts, NOW, LA).isFastest90).toBe(true);
   });
+
+  it("ignores far longer activities too — the band is symmetric", () => {
+    // A 10k at a good pace must not be judged against 100k ultras it cannot
+    // be compared to. Only same-distance efforts count, in both directions.
+    const acts = [
+      makeActivity({ startedAt: NOW - D, distanceM: 10_000, averageSpeed: 4.0 }),
+      ...filler(4, 600).map((a) => ({ ...a, distanceM: 100_000, averageSpeed: 2.0 })),
+    ];
+    expect(deriveFacts(acts, NOW, LA).isFastest90).toBe(false);
+  });
+
+  it("counts activities at the band edges", () => {
+    // 0.8x and 1.25x of 10,000 are both inside the band.
+    const acts = [
+      makeActivity({ startedAt: NOW - D, distanceM: 10_000, averageSpeed: 4.0 }),
+      ...filler(3, 600).map((a) => ({ ...a, distanceM: 8_000, averageSpeed: 3.0 })),
+      ...filler(1, 600).map((a) => ({ ...a, distanceM: 12_500, averageSpeed: 3.0 })),
+    ];
+    expect(deriveFacts(acts, NOW, LA).isFastest90).toBe(true);
+  });
 });
 ```
 
@@ -990,10 +1019,12 @@ function computeIsLongest(last: Activity, others: Activity[]): boolean {
 }
 
 function computeIsFastest(last: Activity, others: Activity[]): boolean {
+  // Symmetric band. A one-sided lower bound would let a 1km sprint outrun every
+  // 10km entry and register as a 90-day best — the case the guard exists to stop.
+  const lower = TUNING.FASTEST_DISTANCE_GUARD * last.distanceM;
+  const upper = last.distanceM / TUNING.FASTEST_DISTANCE_GUARD;
   const comparable = others.filter(
-    (o) =>
-      o.sportType === last.sportType &&
-      o.distanceM >= TUNING.FASTEST_DISTANCE_GUARD * last.distanceM,
+    (o) => o.sportType === last.sportType && o.distanceM >= lower && o.distanceM <= upper,
   );
   if (comparable.length < TUNING.MIN_RECORD_SAMPLES) return false;
   return comparable.every((o) => o.averageSpeed < last.averageSpeed);
@@ -1686,9 +1717,10 @@ export function selectMood(f: Facts, scores: Scores): Selection {
   if ((f.isLongest90 || f.isFastest90) && days <= TUNING.RECENT_DAYS) {
     const what = f.isLongest90 ? "longest" : "fastest";
     const sport = f.last?.sportType.toLowerCase() ?? "session";
+    const when = days < 1 ? "today" : days < 2 ? "yesterday" : "two days ago";
     return {
       moodId: "believe",
-      reasons: [`Your ${what} ${sport} in 90 days, and it was ${days < 1 ? "today" : "just now"}`, ...commonReasons(f)],
+      reasons: [`Your ${what} ${sport} in 90 days, and it was ${when}`, ...commonReasons(f)],
     };
   }
 
@@ -2582,7 +2614,10 @@ describe("mapActivity", () => {
 
 describe("StravaClient.refresh", () => {
   it("posts the refresh grant and returns the rotated token", async () => {
-    let seen: Request | null = null;
+    // `Request | undefined` plus an explicit cast at the assertion site: TypeScript's
+    // control-flow narrowing collapses a `| null` local assigned inside an async
+    // closure to `never`, which makes `seen!.method` a type error.
+    let seen: Request | undefined;
     const client = new StravaClient("cid", "secret", async (input, init) => {
       seen = new Request(input as string, init);
       return jsonResponse({
@@ -2595,9 +2630,10 @@ describe("StravaClient.refresh", () => {
     expect(result.refreshToken).toBe("ref-2");
     expect(result.expiresAt).toBe(1_755_300_000);
 
-    const body = await seen!.text();
-    expect(seen!.method).toBe("POST");
-    expect(seen!.url).toBe("https://www.strava.com/oauth/token");
+    const sent = seen as Request;
+    const body = await sent.text();
+    expect(sent.method).toBe("POST");
+    expect(sent.url).toBe("https://www.strava.com/oauth/token");
     expect(body).toContain("grant_type=refresh_token");
     expect(body).toContain("refresh_token=ref-1");
     expect(body).toContain("client_id=cid");
@@ -2913,8 +2949,14 @@ function happyClient(activities: unknown[] = [ACTIVITY], onToken?: () => void): 
   });
 }
 
-function deps(strava: StravaClient) {
-  return { store: new KvStore(kv()), strava, tz: "America/Los_Angeles", privacyTrimM: 250 };
+/**
+ * The fixture polyline is Google's 3-point continental test vector — its points
+ * are ~200km apart, so a 250m trim leaves fewer than 2 points and `route` comes
+ * back null. Tests that assert on the route pass `privacyTrimM: 0`; the trim
+ * itself is covered exhaustively in Task 8.
+ */
+function deps(strava: StravaClient, privacyTrimM = 250) {
+  return { store: new KvStore(kv()), strava, tz: "America/Los_Angeles", privacyTrimM };
 }
 
 async function seedSnapshot(): Promise<Snapshot> {
@@ -3041,15 +3083,23 @@ describe("runRefresh", () => {
 
   it("produces a snapshot with a route built from the polyline", async () => {
     await new KvStore(kv()).putRefreshToken("ref-old");
-    await runRefresh(deps(happyClient()), NOW);
+    await runRefresh(deps(happyClient(), 0), NOW);
     const snap = await new KvStore(kv()).getSnapshot();
     expect(snap!.route).not.toBeNull();
     expect(snap!.route!.pathD.startsWith("M")).toBe(true);
   });
 
+  it("drops the route entirely when the trim consumes it", async () => {
+    await new KvStore(kv()).putRefreshToken("ref-old");
+    await runRefresh(deps(happyClient(), 250), NOW);
+    expect((await new KvStore(kv()).getSnapshot())!.route).toBeNull();
+  });
+
   it("never persists raw coordinates alongside the path", async () => {
     await new KvStore(kv()).putRefreshToken("ref-old");
-    await runRefresh(deps(happyClient()), NOW);
+    // Trim 0 so a route IS built — asserting absence while a route exists is the
+    // stronger claim.
+    await runRefresh(deps(happyClient(), 0), NOW);
     const raw = (await kv().get("snapshot/current", "text")) ?? "";
     expect(raw).not.toContain("summaryPolyline");
     expect(raw).not.toContain("_p~iF");
@@ -3851,7 +3901,10 @@ describe("renderPage", () => {
     const s = snapshot();
     s.facts.last!.name = `<img src=x onerror="alert(1)">`;
     const html = renderPage(view({ snapshot: s }));
-    expect(html).not.toContain("onerror=");
+    // Escaping leaves the literal text `onerror=&quot;...&quot;` in the document,
+    // which is inert. Assert the EXECUTABLE form is gone, not the substring.
+    expect(html).not.toContain(`onerror="alert(1)"`);
+    expect(html).not.toContain("<img src=x");
     expect(html).toContain("&lt;img");
   });
 

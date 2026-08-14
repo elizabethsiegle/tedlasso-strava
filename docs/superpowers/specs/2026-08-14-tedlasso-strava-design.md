@@ -172,8 +172,14 @@ the window, and there are at least 3 prior same-sport samples. The sample floor 
 first-ever activity from registering as a record.
 
 **isFastest90.** The last activity has the greatest `average_speed` among same-sport
-activities in the window whose `distance >= 0.8 * last.distance`, with at least 3 such prior
-samples. The distance guard prevents a short sprint from beating a long ride.
+activities in the window whose distance falls inside a symmetric band around the last
+activity's — `0.8 * last.distance <= o.distance <= last.distance / 0.8` — with at least 3
+such prior samples.
+
+The band must be symmetric. A one-sided `o.distance >= 0.8 * last.distance` filter fails at
+exactly the case it was meant to catch: for a 1km sprint, every 10km run passes the filter
+and then loses on average speed, so the sprint registers as a 90-day best. Comparing a run
+only against runs of comparable length is the entire point of the guard.
 
 ### 4.3 Axes
 
