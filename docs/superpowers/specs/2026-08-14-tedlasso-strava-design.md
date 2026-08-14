@@ -448,7 +448,13 @@ the repo:
 
 ## 9. Configuration
 
-`wrangler.jsonc`: one KV namespace binding, `"crons": ["0 */4 * * *"]`, observability enabled.
+`wrangler.jsonc`: one KV namespace binding, observability enabled, and cron triggers declared
+under a `triggers` object (verified 2026-08-14 against the Cloudflare docs — `crons` is not a
+top-level key):
+
+```jsonc
+"triggers": { "crons": ["0 */4 * * *"] }
+```
 
 Secrets: `STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET`, `STRAVA_ATHLETE_ID`, `SETUP_KEY`.
 
