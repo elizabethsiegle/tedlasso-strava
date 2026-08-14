@@ -1,9 +1,29 @@
 import { describe, expect, it } from "vitest";
-import { deriveFacts } from "../../src/domain/facts";
+import { deriveFacts, median } from "../../src/domain/facts";
 import { daysAgo, makeActivity } from "../fixtures/activities";
 
 const LA = "America/Los_Angeles";
 const NOW = Date.parse("2026-08-14T19:00:00Z"); // Friday noon PDT
+
+describe("median", () => {
+  it("returns 0 for an empty array", () => {
+    expect(median([])).toBe(0);
+  });
+
+  it("returns the middle value for an odd-length, unsorted array", () => {
+    expect(median([3, 1, 2])).toBe(2);
+  });
+
+  it("averages the two middle values for an even-length, unsorted array", () => {
+    expect(median([4, 1, 3, 2])).toBe(2.5);
+  });
+
+  it("does not mutate its input", () => {
+    const input = [3, 1, 2];
+    median(input);
+    expect(input).toEqual([3, 1, 2]);
+  });
+});
 
 describe("deriveFacts with no activities", () => {
   const f = deriveFacts([], NOW, LA);

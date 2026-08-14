@@ -19,6 +19,9 @@ function tzOffsetMs(epochMs: number, tz: string): number {
   const parts = dtf.formatToParts(new Date(epochMs));
   const get = (type: string): number => {
     const found = parts.find((p) => p.type === type);
+    /* istanbul ignore next -- Intl.DateTimeFormat returns all six requested part
+       types for any valid IANA zone; an invalid zone throws at construction, so
+       this guard is unreachable without mocking Intl internals. */
     if (!found) throw new Error(`missing ${type} for timezone ${tz}`);
     return Number(found.value);
   };
