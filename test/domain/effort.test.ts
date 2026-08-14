@@ -37,6 +37,18 @@ describe("relEffortLast", () => {
     expect(deriveFacts(acts, NOW, LA).relEffortLast).toBe(1);
   });
 
+  it("treats a measured sufferScore of 0 as real effort, not a fallback to duration (?? vs || regression)", () => {
+    // sufferScore: 0 must read as "measured effort of zero", not "no measurement".
+    // Filler effort (50) sits strictly between the two interpretations: the ??
+    // reading (0) puts last dead last; the || reading would fall through to
+    // movingTimeS / 60 (150) and put it on top instead.
+    const acts = [
+      makeActivity({ startedAt: NOW - D, movingTimeS: 9000, sufferScore: 0 }),
+      ...filler(6, 600).map((a) => ({ ...a, sufferScore: 50 })),
+    ];
+    expect(deriveFacts(acts, NOW, LA).relEffortLast).toBe(0);
+  });
+
   it("compares against the same sport, not all sports", () => {
     // Six easy rides must not make a moderate run look hard.
     const acts = [
