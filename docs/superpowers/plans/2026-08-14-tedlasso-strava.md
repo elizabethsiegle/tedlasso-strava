@@ -85,14 +85,20 @@ Proves the toolchain runs before any logic depends on it. If this task's test do
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.9.0",
-    "@cloudflare/workers-types": "^4.20250109.0",
+    "@cloudflare/vitest-pool-workers": "^0.13.0",
+    "@cloudflare/workers-types": "^4.20260702.1",
     "typescript": "^5.7.0",
     "vitest": "^4.1.0",
-    "wrangler": "^4.0.0"
+    "wrangler": "4.107.0"
   }
 }
 ```
+
+These versions were corrected during execution after the originals failed to resolve into an
+installable graph: `@cloudflare/vitest-pool-workers` below 0.13 peer-depends on Vitest 2–3,
+which contradicts the Vitest 4.1 floor, and `wrangler` 4.108+ requires `@cloudflare/workers-types`
+v5. `wrangler` is pinned rather than caret-ranged for that reason — loosen it only alongside a
+workers-types major bump.
 
 - [ ] **Step 2: Create `tsconfig.json`**
 
