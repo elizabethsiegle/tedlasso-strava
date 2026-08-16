@@ -301,12 +301,38 @@ project(points)          -> XY[]            equirectangular, x scaled by cos(mea
 toPath(xy, padding)      -> { pathD, viewBox }
 ```
 
-**Privacy trim.** Walk in from the start dropping points until the cumulative haversine
-distance from the first point exceeds `PRIVACY_TRIM_M` (default 250), then do the same from
-the end. Routes typically begin and end at the athlete's home, and `activity:read_all`
-bypasses any Strava privacy zones the athlete has configured — so the untrimmed polyline
-would reveal more than their public Strava profile does. If fewer than 2 points survive the
-trim, the route is `null` and the no-route fallback renders instead.
+**Privacy trim, part one — the ends.** Walk in from the start dropping points until the
+**straight-line** haversine distance *from the original first point* exceeds
+`PRIVACY_TRIM_M` (default 250), then do the same from the end. Routes typically begin and end
+at the athlete's home, and `activity:read_all` bypasses any Strava privacy zones the athlete
+has configured — so the untrimmed polyline would reveal more than their public Strava profile
+does. If fewer than 2 points survive, the route is `null` and the no-route fallback renders.
+
+The measurement is straight-line distance from the endpoint, **not** cumulative path length
+walked. The two diverge exactly where it matters: an athlete who circles the block or waits
+for a GPS lock in the driveway accumulates path length while still standing next to the
+house, so a cumulative check would release the trim far too early.
+
+**Privacy trim, part two — the middle.** End-trimming alone is not sufficient. A route that
+returns past its own start mid-activity — two laps from the front door, or an out-and-back
+repeated for mileage, both ordinary training patterns — leaves the athlete's home sitting
+in the *interior* of the point list, which a two-ended trim never touches.
+
+So after end-trimming, **drop every remaining point within `PRIVACY_TRIM_M` of either
+original endpoint, wherever it appears in the route.** Because this can remove points from
+the middle, the result is a list of **segments** (`LatLng[][]`), not one polyline. Segments
+shorter than 2 points are discarded; if no segment survives, the route is `null`.
+
+Rendering draws each segment as its own subpath in a single `<path>` element — one `M`
+command per segment. The visible result is a route with a gap where the athlete passed home,
+which is the correct and honest depiction: it shows where they ran without showing where
+they live.
+
+**Redaction happens before persistence, never at render time.** `buildRoute` must also reject
+a `trimM` that is not a positive finite number *unless* trimming was explicitly disabled by
+configuration — a `PRIVACY_TRIM_M` that silently resolves to `0`, `NaN`, or `undefined`
+through a plumbing mistake would publish the full untrimmed route including exact home
+coordinates, and that failure must not be quiet.
 
 **Projection.** Equirectangular with `x = lng * cos(meanLat)` to prevent horizontal
 squashing, then fit to the viewBox preserving aspect ratio with uniform padding. Web Mercator
