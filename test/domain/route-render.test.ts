@@ -296,13 +296,91 @@ describe("buildRoute", () => {
     const polyline = encodePolyline(decoded);
     const originalFirst = decoded[0] as LatLng;
     const originalLast = decoded[decoded.length - 1] as LatLng;
-    const expectedSegments = splitAwayFrom(decoded, [originalFirst, originalLast], TRIM_M).length;
-    expect(expectedSegments).toBeGreaterThan(1);
+    // These are the exact LatLng segments buildRoute itself computes and then
+    // feeds to simplifyToCap/project/toPath -- a direct positional check on
+    // them (not just a count) confirms no point buildRoute renders is close
+    // to the athlete's real start or end, not merely that segmentation
+    // happened at all.
+    const expectedSegments = splitAwayFrom(decoded, [originalFirst, originalLast], TRIM_M);
+    expect(expectedSegments.length).toBeGreaterThan(1);
+    for (const segment of expectedSegments) {
+      for (const p of segment) {
+        expect(haversineM(p, originalFirst)).toBeGreaterThanOrEqual(TRIM_M);
+        expect(haversineM(p, originalLast)).toBeGreaterThanOrEqual(TRIM_M);
+      }
+    }
 
     const route = buildRoute(makeActivity({ summaryPolyline: polyline }), TRIM_M);
     expect(route).not.toBeNull();
     const mCount = (route!.pathD.match(/M/g) ?? []).length;
-    expect(mCount).toBe(expectedSegments);
+    expect(mCount).toBe(expectedSegments.length);
+  });
+
+  describe("projects all segments through one shared transform", () => {
+    /** Split pathD into per-segment [x,y] point lists -- one array per "M...L...L..." chunk. */
+    function parseSegments(pathD: string): XY[][] {
+      return (pathD.match(/M[^M]*/g) ?? []).map((chunk) => {
+        const nums = (chunk.match(/-?\d+(\.\d+)?/g) ?? []).map(Number);
+        const pts: XY[] = [];
+        for (let i = 0; i < nums.length; i += 2) pts.push({ x: nums[i] as number, y: nums[i + 1] as number });
+        return pts;
+      });
+    }
+
+    it("keeps two widely separated, differently-latituded clusters in a mutually consistent coordinate system", () => {
+      // clusterA sits near the equator; clusterB sits near 60N, with an
+      // IDENTICAL real-world lng span (0.3 deg) to clusterA. cos(60 deg) is
+      // 0.5, so if buildRoute projected each segment independently (its own
+      // meanLat, its own scale), clusterB's own longitude scale would shrink
+      // its on-screen span to roughly half of clusterA's -- even though
+      // toPath's later uniform scale-and-offset step is identical for both,
+      // since it operates on whatever XY values it was handed and cannot
+      // undo an already-baked-in per-segment distortion. Projecting the
+      // union once (as buildRoute does) gives both clusters the same
+      // longitude scale, so their on-screen spans come out equal.
+      const REF: LatLng = { lat: 30, lng: 25 }; // far from both clusters; doubles as start and end
+      const clusterA: LatLng[] = [
+        { lat: 0.1, lng: 0.1 },
+        { lat: 0.4, lng: 0.1 },
+        { lat: 0.4, lng: 0.4 },
+        { lat: 0.1, lng: 0.4 },
+      ];
+      const clusterB: LatLng[] = [
+        { lat: 60.1, lng: 50.1 },
+        { lat: 60.4, lng: 50.1 },
+        { lat: 60.4, lng: 50.4 },
+        { lat: 60.1, lng: 50.4 },
+      ];
+      const decoded: LatLng[] = [
+        REF, REF, REF,
+        ...clusterA,
+        REF, REF, REF, REF, REF,
+        ...clusterB,
+        REF, REF, REF,
+      ];
+
+      const route = buildRoute(makeActivity({ summaryPolyline: encodePolyline(decoded) }), TRIM_M);
+      expect(route).not.toBeNull();
+
+      const segments = parseSegments(route!.pathD);
+      expect(segments).toHaveLength(2);
+
+      const xSpan = (seg: XY[]): number => Math.max(...seg.map((p) => p.x)) - Math.min(...seg.map((p) => p.x));
+      const spanA = xSpan(segments[0] as XY[]);
+      const spanB = xSpan(segments[1] as XY[]);
+
+      // Same real lng span, same shared scale -> spans should be close.
+      // Independent per-segment projection would put this ratio near 0.5.
+      expect(spanB / spanA).toBeGreaterThan(0.7);
+      expect(spanB / spanA).toBeLessThan(1.3);
+
+      // Not collapsed to the same local origin, and the relative offset
+      // preserves real-world separation: clusterB sits east of clusterA.
+      expect(segments[0]![0]).not.toEqual(segments[1]![0]);
+      const maxXOfA = Math.max(...(segments[0] as XY[]).map((p) => p.x));
+      const minXOfB = Math.min(...(segments[1] as XY[]).map((p) => p.x));
+      expect(minXOfB).toBeGreaterThan(maxXOfA);
+    });
   });
 
   it("returns null when every point besides two isolated survivors sits near one of the two reference locations", () => {
