@@ -10,7 +10,7 @@ export default defineConfig({
   test: {
     coverage: {
       provider: "istanbul",
-      include: ["src/domain/**", "src/data/**"],
+      include: ["src/domain/**", "src/data/**", "src/app/**"],
       thresholds: { branches: 95, functions: 95, lines: 95, statements: 95 },
     },
   },
