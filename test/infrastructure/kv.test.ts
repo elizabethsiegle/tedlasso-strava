@@ -56,10 +56,21 @@ describe("KvStore", () => {
     expect((await s.getHealth()).lastError).toBe("boom");
   });
 
+  it("returns a fresh health object each call, not a shared reference", async () => {
+    const first = await s.getHealth();
+    first.needsReauth = true;
+    expect((await s.getHealth()).needsReauth).toBe(false);
+  });
+
   it("round-trips the manual refresh timestamp", async () => {
     expect(await s.getLastManualRefreshAt()).toBeNull();
     await s.putLastManualRefreshAt(1234);
     expect(await s.getLastManualRefreshAt()).toBe(1234);
+  });
+
+  it("tolerates a non-numeric manual refresh timestamp rather than leaking NaN", async () => {
+    await (env as never as { STORE: KVNamespace }).STORE.put("refresh/lastAt", "garbage");
+    expect(await s.getLastManualRefreshAt()).toBeNull();
   });
 
   it("consumes an oauth state exactly once", async () => {

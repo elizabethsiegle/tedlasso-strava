@@ -62,7 +62,14 @@ export class KvStore {
     await this.kv.put(KEY.state(nonce), "1", { expirationTtl: TUNING.OAUTH_STATE_TTL_S });
   }
 
-  /** True only on the first call for a given nonce. */
+  /**
+   * Single-use under sequential access: `true` on the first call for a given
+   * nonce, `false` on every call after (or if the nonce was never issued or
+   * has expired). Not atomic — KV has no compare-and-swap — so two genuinely
+   * concurrent callers could both read the value before either delete lands,
+   * and both would get `true`. Acceptable here because this only guards a
+   * single-athlete OAuth setup flow, not a multi-tenant callback.
+   */
   async consumeOAuthState(nonce: string): Promise<boolean> {
     const found = await this.kv.get(KEY.state(nonce), "text");
     if (found === null) return false;
