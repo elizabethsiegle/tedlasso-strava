@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { Mood } from "../../src/data/moods";
 import { MOODS, getMood } from "../../src/data/moods";
 import { fnv1a, pickQuote } from "../../src/domain/quote";
 
@@ -50,5 +51,52 @@ describe("pickQuote", () => {
       const picked = pickQuote(m, 12_345);
       expect(m.quotes).toContainEqual(picked.quote);
     }
+  });
+});
+
+// Every mood in the real catalogue currently ships `gifs: []` (GIF sourcing
+// is a separate follow-up pass — see src/data/moods.ts), so
+// `pickQuote`'s gif-present branch is structurally unreachable using
+// catalogue data alone. This synthetic fixture exists only to pin that
+// branch's behaviour independently of what the catalogue happens to
+// contain. Nothing here is invented into src/data/moods.ts — the fabricated
+// URL lives only in this test file.
+describe("pickQuote gif selection", () => {
+  const syntheticGifs = [
+    {
+      url: "https://example.test/fixture-one.gif",
+      alt: "Synthetic fixture gif used only to pin pickQuote's gif branch",
+      source: "test fixture",
+      verifiedOn: "2026-08-14",
+    },
+    {
+      url: "https://example.test/fixture-two.gif",
+      alt: "Second synthetic fixture gif for the same branch-logic test",
+      source: "test fixture",
+      verifiedOn: "2026-08-14",
+    },
+  ];
+
+  const syntheticMood: Mood = {
+    id: "fixture-mood",
+    name: "Fixture Mood",
+    accent: "#123456",
+    verifiedOn: "2026-08-14",
+    quotes: [{ text: "Fixture quote text.", character: "Fixture Character" }],
+    gifs: syntheticGifs,
+  };
+
+  it("returns one of the mood's own gifs, deterministically, when gifs are present", () => {
+    const first = pickQuote(syntheticMood, 777);
+    const second = pickQuote(syntheticMood, 777);
+
+    expect(first.gif).not.toBeNull();
+    expect(syntheticMood.gifs).toContainEqual(first.gif);
+    expect(second.gif).toEqual(first.gif);
+  });
+
+  it("returns a null gif for the complementary case: a mood with no gifs", () => {
+    const noGifMood: Mood = { ...syntheticMood, gifs: [] };
+    expect(pickQuote(noGifMood, 777).gif).toBeNull();
   });
 });
