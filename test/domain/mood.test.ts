@@ -82,8 +82,8 @@ describe("the score grid", () => {
   const plain = facts({ daysSinceLast: 4, streakDays: 0, previousGapDays: 2 });
 
   it("middle band on both axes is checked first", () => {
-    expect(selectMood(plain, { consistency: 45, charge: 45 }).moodId).toBe("biscuits");
-    expect(selectMood(plain, { consistency: 36, charge: 59 }).moodId).toBe("biscuits");
+    expect(selectMood(plain, { consistency: 45, charge: 45 }).moodId).toBe("diamond-dogs");
+    expect(selectMood(plain, { consistency: 36, charge: 59 }).moodId).toBe("diamond-dogs");
   });
 
   it("high and high", () => {
@@ -106,7 +106,7 @@ describe("the score grid", () => {
     expect(selectMood(plain, { consistency: 60, charge: 60 }).moodId).toBe("football-is-life");
   });
 
-  it("a mid consistency with a low charge is not the middle-band mood", () => {
+  it("a mid consistency with a low charge is not diamond-dogs", () => {
     expect(selectMood(plain, { consistency: 45, charge: 10 }).moodId).toBe("biscuits");
   });
 });

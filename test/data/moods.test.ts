@@ -3,11 +3,11 @@ import { MOODS, getMood } from "../../src/data/moods";
 
 const REQUIRED_IDS = [
   "preseason", "whered-you-go", "believe", "roy-kent", "comeback-szn",
-  "football-is-life", "gaffer-mode", "hopeful", "biscuits",
+  "diamond-dogs", "football-is-life", "gaffer-mode", "hopeful", "biscuits",
 ];
 
 describe("mood catalogue", () => {
-  it("contains exactly the nine moods the engine can select", () => {
+  it("contains exactly the ten moods the engine can select", () => {
     expect(MOODS.map((m) => m.id).sort()).toEqual([...REQUIRED_IDS].sort());
   });
 

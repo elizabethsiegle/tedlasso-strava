@@ -44,10 +44,10 @@ export function selectMood(f: Facts, scores: Scores): Selection {
     };
   }
 
-  // Invariant from deriveFacts: totalActivities > 0 implies daysSinceLast (and
-  // last) are non-null. Rule 1 above already handled the only state where
-  // that isn't true.
-  const days = f.daysSinceLast as number;
+  // deriveFacts guarantees daysSinceLast is non-null whenever totalActivities
+  // > 0, but Facts is a plain interface a caller could construct otherwise —
+  // fall back to 0 rather than trust that invariant across a file boundary.
+  const days = f.daysSinceLast ?? 0;
 
   // 2. Dormant.
   if (days >= TUNING.DORMANT_DAYS) {
@@ -60,9 +60,7 @@ export function selectMood(f: Facts, scores: Scores): Selection {
   // 3. A fresh 90-day best.
   if ((f.isLongest90 || f.isFastest90) && days <= TUNING.RECENT_DAYS) {
     const what = f.isLongest90 ? "longest" : "fastest";
-    // Reachable only when isLongest90 || isFastest90, which deriveFacts only
-    // ever sets when `last` exists.
-    const sport = (f.last as NonNullable<Facts["last"]>).sportType.toLowerCase();
+    const sport = f.last?.sportType.toLowerCase() ?? "session";
     const when = days < 1 ? "today" : days < 2 ? "yesterday" : "two days ago";
     return {
       moodId: "believe",
@@ -97,10 +95,7 @@ export function selectMood(f: Facts, scores: Scores): Selection {
   const reasons = commonReasons(f);
   if (reasons.length === 0) reasons.push(`${Math.floor(days)} days since your last activity`);
 
-  // Nine moods total, so the "nothing remarkable on either axis" middle band
-  // shares its mood with the low/low quadrant: both read as a quiet, steady
-  // week rather than a peak or a lull.
-  if (inBand(consistency) && inBand(charge)) return { moodId: "biscuits", reasons };
+  if (inBand(consistency) && inBand(charge)) return { moodId: "diamond-dogs", reasons };
   if (consistency >= TUNING.GRID_HIGH && charge >= TUNING.GRID_HIGH) {
     return { moodId: "football-is-life", reasons };
   }

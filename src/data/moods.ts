@@ -28,6 +28,7 @@ export type MOOD_IDS =
   | "believe"
   | "roy-kent"
   | "comeback-szn"
+  | "diamond-dogs"
   | "football-is-life"
   | "gaffer-mode"
   | "hopeful"
@@ -117,6 +118,21 @@ export const MOODS: Mood[] = [
       {
         text: "A good mentor hopes you will move on. A great mentor knows you will.",
         character: "Leslie Higgins",
+      },
+    ],
+    gifs: [],
+  },
+  {
+    id: "diamond-dogs",
+    name: "Diamond Dogs",
+    accent: "#8A7B4F",
+    verifiedOn: "2026-08-14",
+    quotes: [
+      { text: "Barbecue sauce.", character: "Ted Lasso" },
+      { text: "Diamond Dogs, assemble!", character: "Ted Lasso" },
+      {
+        text: "If you care about someone, and you got a little love in your heart, there ain't nothing you can't get through together.",
+        character: "Ted Lasso",
       },
     ],
     gifs: [],
