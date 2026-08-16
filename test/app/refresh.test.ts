@@ -1,0 +1,199 @@
+import { env } from "cloudflare:workers";
+import { beforeEach, describe, expect, it } from "vitest";
+import { runRefresh } from "../../src/app/refresh";
+import { KvStore } from "../../src/infrastructure/store/kv";
+import { StravaClient } from "../../src/infrastructure/strava/client";
+import type { Snapshot } from "../../src/types";
+
+const NOW = Date.parse("2026-08-14T19:00:00Z");
+const kv = (): KVNamespace => (env as never as { STORE: KVNamespace }).STORE;
+
+const ACTIVITY = {
+  id: 1, name: "Morning Run", sport_type: "Run", distance: 8000,
+  moving_time: 2400, total_elevation_gain: 50, average_speed: 3.3,
+  suffer_score: 60, start_date: "2026-08-14T14:00:00Z",
+  map: { summary_polyline: "_p~iF~ps|U_ulLnnqC_mqNvxq`@" },
+  location_city: "San Francisco", location_state: "CA",
+};
+
+function json(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
+}
+
+/** A client whose token endpoint succeeds and whose activity endpoint returns `activities`. */
+function happyClient(activities: unknown[] = [ACTIVITY], onToken?: () => void): StravaClient {
+  return new StravaClient("cid", "sec", async (input) => {
+    if (input.startsWith("https://www.strava.com/oauth/token")) {
+      onToken?.();
+      return json({ access_token: "acc-new", refresh_token: "ref-new", expires_at: 1 });
+    }
+    return json(activities);
+  });
+}
+
+/**
+ * The fixture polyline is Google's 3-point continental test vector — its points
+ * are ~200km apart, so a 250m trim leaves fewer than 2 points and `route` comes
+ * back null. Tests that assert on the route pass `privacyTrimM: 0`; the trim
+ * itself is covered exhaustively in Task 8.
+ */
+function deps(strava: StravaClient, privacyTrimM = 250) {
+  return { store: new KvStore(kv()), strava, tz: "America/Los_Angeles", privacyTrimM };
+}
+
+async function seedSnapshot(): Promise<Snapshot> {
+  const existing: Snapshot = {
+    version: 1, refreshedAt: 1, mood: { id: "biscuits", name: "Biscuits", accent: "#D98B5F" },
+    quote: { text: "Biscuits with the boss.", character: "Ted Lasso" }, gif: null,
+    scores: { consistency: 1, charge: 1 }, reasons: ["seeded"],
+    facts: { last: null, daysSinceLast: null, countLast7: 0, baselineWeekly: 0, streakDays: 0, totalActivities: 0 },
+    route: null,
+  };
+  await new KvStore(kv()).putSnapshot(existing);
+  return existing;
+}
+
+describe("runRefresh", () => {
+  beforeEach(async () => {
+    for (const key of ["token/refresh", "snapshot/current", "health", "refresh/lastAt"]) {
+      await kv().delete(key);
+    }
+  });
+
+  it("fails cleanly when no token has been stored yet", async () => {
+    const result = await runRefresh(deps(happyClient()), NOW);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toBe("no-token");
+    expect(await new KvStore(kv()).getSnapshot()).toBeNull();
+  });
+
+  it("writes the rotated refresh token BEFORE fetching activities", async () => {
+    const order: string[] = [];
+    const store = new KvStore(kv());
+    await store.putRefreshToken("ref-old");
+
+    const strava = new StravaClient("cid", "sec", async (input) => {
+      if (input.startsWith("https://www.strava.com/oauth/token")) {
+        return json({ access_token: "acc", refresh_token: "ref-new", expires_at: 1 });
+      }
+      order.push(`activities:token=${await store.getRefreshToken()}`);
+      return json([ACTIVITY]);
+    });
+
+    await runRefresh(deps(strava), NOW);
+    expect(order).toEqual(["activities:token=ref-new"]);
+  });
+
+  it("writes a snapshot on success", async () => {
+    await new KvStore(kv()).putRefreshToken("ref-old");
+    const result = await runRefresh(deps(happyClient()), NOW);
+
+    expect(result.ok).toBe(true);
+    const stored = await new KvStore(kv()).getSnapshot();
+    expect(stored).not.toBeNull();
+    expect(stored!.refreshedAt).toBe(NOW);
+    expect(stored!.version).toBe(1);
+    expect(stored!.facts.totalActivities).toBe(1);
+  });
+
+  it("records success in health", async () => {
+    await new KvStore(kv()).putRefreshToken("ref-old");
+    await runRefresh(deps(happyClient()), NOW);
+    const health = await new KvStore(kv()).getHealth();
+    expect(health.lastSuccessAt).toBe(NOW);
+    expect(health.needsReauth).toBe(false);
+    expect(health.lastError).toBeNull();
+  });
+
+  it("leaves the previous snapshot byte-identical when the refresh 4xxs", async () => {
+    const before = await seedSnapshot();
+    await new KvStore(kv()).putRefreshToken("ref-dead");
+    const strava = new StravaClient("cid", "sec", async () => json({ message: "Bad" }, 400));
+
+    const result = await runRefresh(deps(strava), NOW);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toBe("auth");
+    expect(await new KvStore(kv()).getSnapshot()).toEqual(before);
+  });
+
+  it("sets needsReauth when the refresh 4xxs", async () => {
+    await new KvStore(kv()).putRefreshToken("ref-dead");
+    const strava = new StravaClient("cid", "sec", async () => json({}, 401));
+    await runRefresh(deps(strava), NOW);
+    expect((await new KvStore(kv()).getHealth()).needsReauth).toBe(true);
+  });
+
+  it("writes no snapshot and does not set needsReauth when rate limited", async () => {
+    const before = await seedSnapshot();
+    await new KvStore(kv()).putRefreshToken("ref-old");
+    const strava = new StravaClient("cid", "sec", async (input) =>
+      input.startsWith("https://www.strava.com/oauth/token")
+        ? json({ access_token: "a", refresh_token: "r", expires_at: 1 })
+        : json({}, 429),
+    );
+
+    const result = await runRefresh(deps(strava), NOW);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toBe("rate-limit");
+    expect(await new KvStore(kv()).getSnapshot()).toEqual(before);
+    expect((await new KvStore(kv()).getHealth()).needsReauth).toBe(false);
+  });
+
+  it("clears a previous needsReauth after a good refresh", async () => {
+    const store = new KvStore(kv());
+    await store.putHealth({ lastAttemptAt: 1, lastSuccessAt: null, lastError: "old", needsReauth: true });
+    await store.putRefreshToken("ref-old");
+    await runRefresh(deps(happyClient()), NOW);
+    expect((await store.getHealth()).needsReauth).toBe(false);
+  });
+
+  it("requests activities with an epoch-SECONDS after value 90 days back", async () => {
+    let seenUrl = "";
+    await new KvStore(kv()).putRefreshToken("ref-old");
+    const strava = new StravaClient("cid", "sec", async (input) => {
+      if (input.startsWith("https://www.strava.com/oauth/token")) {
+        return json({ access_token: "a", refresh_token: "r", expires_at: 1 });
+      }
+      seenUrl = input;
+      return json([]);
+    });
+
+    await runRefresh(deps(strava), NOW);
+    const expected = Math.floor((NOW - 90 * 86_400_000) / 1000);
+    expect(seenUrl).toContain(`after=${expected}`);
+  });
+
+  it("produces a snapshot with a route built from the polyline", async () => {
+    await new KvStore(kv()).putRefreshToken("ref-old");
+    await runRefresh(deps(happyClient(), 0), NOW);
+    const snap = await new KvStore(kv()).getSnapshot();
+    expect(snap!.route).not.toBeNull();
+    expect(snap!.route!.pathD.startsWith("M")).toBe(true);
+  });
+
+  it("drops the route entirely when the trim consumes it", async () => {
+    await new KvStore(kv()).putRefreshToken("ref-old");
+    await runRefresh(deps(happyClient(), 250), NOW);
+    expect((await new KvStore(kv()).getSnapshot())!.route).toBeNull();
+  });
+
+  it("never persists raw coordinates alongside the path", async () => {
+    await new KvStore(kv()).putRefreshToken("ref-old");
+    // Trim 0 so a route IS built — asserting absence while a route exists is the
+    // stronger claim.
+    await runRefresh(deps(happyClient(), 0), NOW);
+    const raw = (await kv().get("snapshot/current", "text")) ?? "";
+    expect(raw).not.toContain("summaryPolyline");
+    expect(raw).not.toContain("_p~iF");
+    expect(raw).not.toContain('"lat"');
+  });
+
+  it("still writes a snapshot when the athlete has no activities", async () => {
+    await new KvStore(kv()).putRefreshToken("ref-old");
+    const result = await runRefresh(deps(happyClient([])), NOW);
+    expect(result.ok).toBe(true);
+    const snap = await new KvStore(kv()).getSnapshot();
+    expect(snap!.mood.id).toBe("preseason");
+    expect(snap!.route).toBeNull();
+  });
+});
