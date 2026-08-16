@@ -196,4 +196,64 @@ describe("runRefresh", () => {
     expect(snap!.mood.id).toBe("preseason");
     expect(snap!.route).toBeNull();
   });
+
+  it("classifies a non-Strava failure as \"error\" without touching the snapshot or needsReauth", async () => {
+    const before = await seedSnapshot();
+    await new KvStore(kv()).putRefreshToken("ref-old");
+    const strava = new StravaClient("cid", "sec", async (input) => {
+      if (input.startsWith("https://www.strava.com/oauth/token")) {
+        return json({ access_token: "a", refresh_token: "r", expires_at: 1 });
+      }
+      throw new Error("network down");
+    });
+
+    const result = await runRefresh(deps(strava), NOW);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toBe("error");
+    expect(await new KvStore(kv()).getSnapshot()).toEqual(before);
+
+    const health = await new KvStore(kv()).getHealth();
+    expect(health.needsReauth).toBe(false);
+    expect(health.lastError).toBe("network down");
+  });
+
+  it("fails loudly instead of publishing a route when privacyTrimM is not finite, and leaves the snapshot alone", async () => {
+    const before = await seedSnapshot();
+    await new KvStore(kv()).putRefreshToken("ref-old");
+
+    const result = await runRefresh(deps(happyClient(), Number.NaN), NOW);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toBe("error");
+    expect(await new KvStore(kv()).getSnapshot()).toEqual(before);
+  });
+
+  it("builds the route from the genuinely most recent activity out of several, shuffled", async () => {
+    const oldest = { ...ACTIVITY, distance: 5000, start_date: "2026-08-01T14:00:00Z" };
+    const newest = { ...ACTIVITY, distance: 9999, start_date: "2026-08-12T14:00:00Z" };
+    const middle = { ...ACTIVITY, distance: 3000, start_date: "2026-08-05T14:00:00Z" };
+
+    await new KvStore(kv()).putRefreshToken("ref-old");
+    // Deliberately not in chronological order, so the comparator has to do the work.
+    const result = await runRefresh(deps(happyClient([middle, oldest, newest]), 0), NOW);
+
+    expect(result.ok).toBe(true);
+    const snap = await new KvStore(kv()).getSnapshot();
+    expect(snap!.route).not.toBeNull();
+    expect(snap!.route!.distanceM).toBe(9999);
+  });
+
+  it("stringifies a non-Error thrown value instead of losing it to `undefined`", async () => {
+    await new KvStore(kv()).putRefreshToken("ref-old");
+    const strava = new StravaClient("cid", "sec", async (input) => {
+      if (input.startsWith("https://www.strava.com/oauth/token")) {
+        return json({ access_token: "a", refresh_token: "r", expires_at: 1 });
+      }
+      throw "boom";
+    });
+
+    const result = await runRefresh(deps(strava), NOW);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toBe("error");
+    expect((await new KvStore(kv()).getHealth()).lastError).toBe("boom");
+  });
 });
