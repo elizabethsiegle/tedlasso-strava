@@ -5,6 +5,7 @@ import {
   StravaClient,
   StravaRateLimitError,
 } from "../../src/infrastructure/strava/client";
+import { TUNING } from "../../src/domain/tuning";
 
 const RAW = {
   id: 42,
@@ -43,6 +44,21 @@ describe("mapActivity", () => {
   it("treats a missing suffer_score as null rather than zero", () => {
     const { suffer_score, ...rest } = RAW;
     expect(mapActivity(rest)!.sufferScore).toBeNull();
+  });
+
+  it("preserves a genuine suffer_score of 0 rather than reclassifying it as missing", () => {
+    // A real, measured zero-effort session must survive the mapping distinctly from an
+    // absent field. `undefined` alone cannot discriminate a correct `typeof` check from a
+    // sloppy `r.suffer_score || null`, since both treat `undefined` as falsy/missing.
+    expect(mapActivity({ ...RAW, suffer_score: 0 })!.sufferScore).toBe(0);
+  });
+
+  it("returns null for a non-string start_date", () => {
+    expect(mapActivity({ ...RAW, start_date: 1_755_100_000_000 })).toBeNull();
+  });
+
+  it("tolerates a non-object map value", () => {
+    expect(mapActivity({ ...RAW, map: "not-an-object" })!.summaryPolyline).toBeNull();
   });
 
   it("treats a null polyline as null", () => {
@@ -149,7 +165,7 @@ describe("StravaClient.listActivities", () => {
     await client.listActivities("acc", 1_747_000_000);
     expect(auth).toBe("Bearer acc");
     expect(url).toContain("after=1747000000");
-    expect(url).toContain("per_page=200");
+    expect(url).toContain(`per_page=${TUNING.PER_PAGE}`);
     expect(url).not.toContain("1747000000000"); // must not be milliseconds
   });
 
@@ -165,14 +181,14 @@ describe("StravaClient.listActivities", () => {
 
   it("fetches a second page when the first is full, and stops at the cap", async () => {
     let calls = 0;
-    const full = Array.from({ length: 200 }, (_, i) => ({ ...RAW, id: i }));
+    const full = Array.from({ length: TUNING.PER_PAGE }, (_, i) => ({ ...RAW, id: i }));
     const client = new StravaClient("cid", "secret", async () => {
       calls++;
       return jsonResponse(full);
     });
     const activities = await client.listActivities("acc", 1);
-    expect(calls).toBe(2); // MAX_PAGES
-    expect(activities).toHaveLength(400);
+    expect(calls).toBe(TUNING.MAX_PAGES);
+    expect(activities).toHaveLength(TUNING.MAX_PAGES * TUNING.PER_PAGE);
   });
 
   it("skips unmappable records instead of failing the whole fetch", async () => {
