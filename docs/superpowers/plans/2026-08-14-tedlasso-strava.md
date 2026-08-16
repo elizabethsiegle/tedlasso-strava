@@ -1263,6 +1263,7 @@ git commit -m "feat(domain): consistency and charge axis scoring"
 | `football-is-life` | Football Is Life | `#1F7A3D` | "Football is life!" — Dani Rojas · "I think that you might be so sure that you're one in a million that sometimes you forget that out there you're just one of eleven." — Ted Lasso · "If the Lasso way is wrong, it's hard to imagine being right." — Ted Lasso |
 | `gaffer-mode` | Gaffer Mode | `#34495E` | "Success is not about the wins and losses. It's about helping these young fellas be the best versions of themselves." — Ted Lasso · "I think things come into our lives to help us get from one place to a better one." — Ted Lasso · "The harder you work, the luckier you get." — Ted Lasso |
 | `hopeful` | Hopeful | `#C77DBB` | "I believe in hope. I believe in believe." — Ted Lasso · "You beating yourself up is like Woody Allen playing the clarinet. I don't wanna hear it." — Ted Lasso · "Small acts of kindness never go unnoticed." — Ted Lasso |
+| `diamond-dogs` | Diamond Dogs | `#8A7B4F` | "Barbecue sauce." — Ted Lasso · "Diamond Dogs, assemble!" — Ted Lasso · "If you care about someone, and you got a little love in your heart, there ain't nothing you can't get through together." — Ted Lasso |
 | `biscuits` | Biscuits | `#D98B5F` | "Biscuits with the boss." — Ted Lasso · "I always figured that tea was gonna taste like hot brown water. And you know what? I was right." — Ted Lasso · "Taking a break is not the same as giving up." — Ted Lasso |
 
 - [ ] **Step 1: Write the failing catalogue tests**
@@ -1274,11 +1275,11 @@ import { MOODS, getMood } from "../../src/data/moods";
 
 const REQUIRED_IDS = [
   "preseason", "whered-you-go", "believe", "roy-kent", "comeback-szn",
-  "football-is-life", "gaffer-mode", "hopeful", "biscuits",
+  "diamond-dogs", "football-is-life", "gaffer-mode", "hopeful", "biscuits",
 ];
 
 describe("mood catalogue", () => {
-  it("contains exactly the nine moods the engine can select", () => {
+  it("contains exactly the ten moods the engine can select", () => {
     expect(MOODS.map((m) => m.id).sort()).toEqual([...REQUIRED_IDS].sort());
   });
 
@@ -4429,7 +4430,7 @@ describe("preview route", () => {
   });
 });
 
-// Spec §8 requires render coverage of all nine moods, not just the one the
+// Spec §8 requires render coverage of all ten moods, not just the one the
 // engine happens to select today.
 describe("every mood renders", () => {
   for (const mood of MOODS) {

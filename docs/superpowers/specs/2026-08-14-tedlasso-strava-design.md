@@ -236,7 +236,12 @@ checked before the four quadrants.
 | `consistency < 60 && charge >= 60` | `hopeful` |
 | `consistency < 60 && charge < 60` | `biscuits` |
 
-Nine moods total.
+Ten moods total: five reached by an override rule, five by the score grid.
+
+Count them from the two tables above rather than trusting this sentence — an earlier
+draft claimed nine, and the catalogue was then built to match the wrong number by
+dropping `diamond-dogs`, which the grid still selected. The selection tables are the
+authority on which ids must exist.
 
 ### 4.5 Mood catalogue
 
@@ -450,7 +455,7 @@ the repo:
 - `/api/refresh` honors the 60-second cooldown
 - `/auth/callback` rejects a reused state, an expired state, and a mismatched athlete ID
 
-**Render — snapshot tests** over the HTML for all nine moods and every failure state in §7.
+**Render — snapshot tests** over the HTML for all ten moods and every failure state in §7.
 
 ## 9. Configuration
 
