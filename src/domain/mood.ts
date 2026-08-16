@@ -1,0 +1,110 @@
+import type { Facts } from "./activity";
+import { TUNING } from "./tuning";
+
+export interface Scores {
+  consistency: number;
+  charge: number;
+}
+
+export interface Selection {
+  moodId: string;
+  reasons: string[];
+}
+
+function plural(n: number, one: string, many: string): string {
+  return n === 1 ? one : many;
+}
+
+function formatCount(n: number): string {
+  return Number.isInteger(n) ? String(n) : n.toFixed(1);
+}
+
+/** Facts worth showing regardless of which rule fired. */
+function commonReasons(f: Facts): string[] {
+  const out: string[] = [];
+
+  if (f.countLast7 > 0) {
+    out.push(
+      `${f.countLast7} ${plural(f.countLast7, "workout", "workouts")} this week, ` +
+        `against your usual ${formatCount(f.baselineWeekly)}`,
+    );
+  }
+  if (f.streakDays >= 2) {
+    out.push(`${f.streakDays} days in a row`);
+  }
+  return out;
+}
+
+export function selectMood(f: Facts, scores: Scores): Selection {
+  // 1. Nothing to go on.
+  if (f.totalActivities === 0) {
+    return {
+      moodId: "preseason",
+      reasons: ["No activities in the last 90 days — the season hasn't kicked off yet"],
+    };
+  }
+
+  // Invariant from deriveFacts: totalActivities > 0 implies daysSinceLast (and
+  // last) are non-null. Rule 1 above already handled the only state where
+  // that isn't true.
+  const days = f.daysSinceLast as number;
+
+  // 2. Dormant.
+  if (days >= TUNING.DORMANT_DAYS) {
+    return {
+      moodId: "whered-you-go",
+      reasons: [`${Math.floor(days)} days since your last activity`, ...commonReasons(f)],
+    };
+  }
+
+  // 3. A fresh 90-day best.
+  if ((f.isLongest90 || f.isFastest90) && days <= TUNING.RECENT_DAYS) {
+    const what = f.isLongest90 ? "longest" : "fastest";
+    // Reachable only when isLongest90 || isFastest90, which deriveFacts only
+    // ever sets when `last` exists.
+    const sport = (f.last as NonNullable<Facts["last"]>).sportType.toLowerCase();
+    const when = days < 1 ? "today" : days < 2 ? "yesterday" : "two days ago";
+    return {
+      moodId: "believe",
+      reasons: [`Your ${what} ${sport} in 90 days, and it was ${when}`, ...commonReasons(f)],
+    };
+  }
+
+  // 4. On a run of days.
+  if (f.streakDays >= TUNING.STREAK_MOOD_DAYS) {
+    return {
+      moodId: "roy-kent",
+      reasons: [`${f.streakDays} days in a row and still going`, ...commonReasons(f).slice(0, 1)],
+    };
+  }
+
+  // 5. Back after a layoff.
+  if (days <= TUNING.RECENT_DAYS && f.previousGapDays !== null && f.previousGapDays >= TUNING.COMEBACK_GAP_DAYS) {
+    return {
+      moodId: "comeback-szn",
+      reasons: [
+        `Back at it after ${Math.floor(f.previousGapDays)} days off`,
+        ...commonReasons(f),
+      ],
+    };
+  }
+
+  // Grid fallback. The middle band is checked first, before the four
+  // quadrants — a score of exactly GRID_HIGH counts as high on that axis, not
+  // as part of the band.
+  const { consistency, charge } = scores;
+  const inBand = (n: number): boolean => n > TUNING.GRID_LOW && n < TUNING.GRID_HIGH;
+  const reasons = commonReasons(f);
+  if (reasons.length === 0) reasons.push(`${Math.floor(days)} days since your last activity`);
+
+  // Nine moods total, so the "nothing remarkable on either axis" middle band
+  // shares its mood with the low/low quadrant: both read as a quiet, steady
+  // week rather than a peak or a lull.
+  if (inBand(consistency) && inBand(charge)) return { moodId: "biscuits", reasons };
+  if (consistency >= TUNING.GRID_HIGH && charge >= TUNING.GRID_HIGH) {
+    return { moodId: "football-is-life", reasons };
+  }
+  if (consistency >= TUNING.GRID_HIGH) return { moodId: "gaffer-mode", reasons };
+  if (charge >= TUNING.GRID_HIGH) return { moodId: "hopeful", reasons };
+  return { moodId: "biscuits", reasons };
+}
