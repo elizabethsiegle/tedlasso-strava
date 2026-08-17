@@ -1,0 +1,142 @@
+export const STYLES = `
+:root {
+  --stock: #F4F1E8;
+  --ink: #17171A;
+  --ink-soft: #55565C;
+  --rule: #C9C3B4;
+  --ink-accent: #17171A;
+  --display: ui-sans-serif, "Helvetica Neue", Arial, sans-serif;
+  --text: Georgia, "Iowan Old Style", "Times New Roman", serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --stock: #14140F;
+    --ink: #F1EDE2;
+    --ink-soft: #A7A296;
+    --rule: #3A382F;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--stock);
+  color: var(--ink);
+  font-family: var(--text);
+  font-size: 17px;
+  line-height: 1.5;
+  /* Newsprint tooth. A flat fill is the giveaway of a generated page. */
+  background-image:
+    repeating-linear-gradient(0deg, rgba(0,0,0,.014) 0 1px, transparent 1px 3px);
+}
+
+.sheet { max-width: 60rem; margin: 0 auto; padding: 1.5rem 1.25rem 4rem; }
+
+.masthead {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 1rem; flex-wrap: wrap;
+  border-top: 3px solid var(--ink);
+  border-bottom: 1px solid var(--rule);
+  padding: .5rem 0 .35rem;
+}
+
+.mood-name {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: clamp(1.75rem, 7vw, 3.25rem);
+  letter-spacing: -.035em;
+  text-transform: uppercase;
+  color: var(--ink-accent);
+  margin: 0;
+  line-height: .95;
+}
+
+.masthead-meta {
+  font-family: var(--display);
+  font-size: .7rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.stamp {
+  display: inline-block;
+  transform: rotate(-4deg);
+  border: 2px solid var(--ink-soft);
+  color: var(--ink-soft);
+  font-family: var(--display);
+  font-size: .62rem; letter-spacing: .2em; text-transform: uppercase;
+  padding: .15rem .4rem;
+}
+
+.hero { display: grid; grid-template-columns: 1fr; gap: 1.5rem; padding: 2.5rem 0 1.75rem; }
+@media (min-width: 46rem) { .hero { grid-template-columns: 1.6fr 1fr; align-items: start; } }
+
+blockquote.quote {
+  margin: 0;
+  font-size: clamp(1.65rem, 5.2vw, 3rem);
+  line-height: 1.08;
+  letter-spacing: -.02em;
+  text-wrap: balance;
+}
+
+.attribution {
+  margin-top: .9rem;
+  font-family: var(--display);
+  font-size: .72rem; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.gif { width: 100%; height: auto; display: block; border: 1px solid var(--ink-accent); }
+
+.rule { border: 0; border-top: 1px solid var(--rule); margin: 0; }
+
+/* The receipts are deliberately denser than the hero. That contrast is the layout. */
+.receipts {
+  width: 100%; border-collapse: collapse;
+  font-family: var(--display);
+  font-size: .8rem;
+  font-variant-numeric: tabular-nums lining-nums;
+  margin-top: 1.25rem;
+}
+.receipts th {
+  text-align: left; font-weight: 600; letter-spacing: .12em;
+  text-transform: uppercase; font-size: .62rem; color: var(--ink-soft);
+  padding: .3rem .75rem .3rem 0; white-space: nowrap; vertical-align: baseline;
+}
+.receipts td { padding: .3rem 0; border-bottom: 1px solid var(--rule); }
+
+.reasons { margin: 1.25rem 0 0; padding: 0; list-style: none; }
+.reasons li { padding-left: 1rem; text-indent: -1rem; color: var(--ink-soft); }
+.reasons li::before { content: "— "; color: var(--ink-accent); }
+
+/* Echoes the masthead's own rule treatment (heavy top, hairline bottom)
+   rather than a colored side tab, so a callout reads as part of this sheet's
+   type system instead of a bolted-on alert card. */
+.notice {
+  border-top: 3px solid var(--ink-accent);
+  border-bottom: 1px solid var(--rule);
+  padding: .6rem 0;
+  margin: 1rem 0;
+  font-family: var(--display);
+  font-size: .8rem;
+}
+
+.footer {
+  margin-top: 2.5rem; padding-top: .6rem;
+  border-top: 1px solid var(--rule);
+  display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+  font-family: var(--display);
+  font-size: .68rem; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.footer a { color: inherit; }
+
+button.refresh {
+  font-family: var(--display);
+  font-size: .68rem; letter-spacing: .18em; text-transform: uppercase;
+  background: var(--ink); color: var(--stock);
+  border: 0; padding: .5rem .9rem; cursor: pointer;
+}
+button.refresh[disabled] { opacity: .45; cursor: wait; }
+`;

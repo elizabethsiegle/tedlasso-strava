@@ -1,4 +1,5 @@
 import { handleCallback, handleLogin, hasSetupKey, type AuthDeps } from "./app/auth";
+import { renderPage } from "./app/render";
 import { runRefresh } from "./app/refresh";
 import { TUNING } from "./domain/tuning";
 import { KvStore } from "./infrastructure/store/kv";
@@ -78,11 +79,18 @@ export default {
     if (url.pathname === "/api/refresh") return handleManualRefresh(request, env, nowMs);
 
     if (url.pathname === "/") {
-      // Task 15 replaces this with renderPage().
-      const snapshot = await new KvStore(env.STORE).getSnapshot();
-      return new Response(snapshot ? snapshot.mood.name : "Preseason", {
-        headers: { "content-type": "text/plain; charset=utf-8" },
-      });
+      const store = new KvStore(env.STORE);
+      const [snapshot, health] = await Promise.all([store.getSnapshot(), store.getHealth()]);
+      return new Response(
+        renderPage({
+          snapshot,
+          health,
+          nowMs,
+          showRefreshButton: hasSetupKey(request, env.SETUP_KEY),
+          previewNotice: null,
+        }),
+        { headers: { "content-type": "text/html; charset=utf-8" } },
+      );
     }
 
     return new Response("Not found", { status: 404 });
