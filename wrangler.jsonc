@@ -8,11 +8,11 @@
     "crons": ["0 */4 * * *"]
   },
   "kv_namespaces": [
-    { "binding": "STORE", "id": "PLACEHOLDER_REPLACED_AT_DEPLOY" }
+    { "binding": "STORE", "id": "3dd8f771b3ae4f5ba2118331148236fb" }
   ],
   "vars": {
     "TIMEZONE": "America/Los_Angeles",
     "PRIVACY_TRIM_M": "250",
-    "REDIRECT_URI": "http://localhost:8787/auth/callback"
+    "REDIRECT_URI": "https://tedlasso-strava.lizzie-siegle5086.workers.dev/auth/callback"
   }
 }
