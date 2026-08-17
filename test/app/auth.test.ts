@@ -172,7 +172,13 @@ describe("handleCallback", () => {
     expect(await new KvStore(kv()).getRefreshToken()).toBeNull();
   });
 
-  it("still stores the token and redirects home when the post-connect refresh throws", async () => {
+  it("still stores the token and redirects home when the post-connect refresh fails", async () => {
+    // runRefresh wraps its own body in a try/catch and always resolves a
+    // RefreshResult rather than rejecting, so the broken store below is
+    // caught inside runRefresh and surfaces as { ok: false, ... } — this
+    // exercises that failure-result path, not the try/catch that wraps the
+    // runRefresh call in handleCallback (that wrap is defensive insurance
+    // for a future change, and has no throw to catch here).
     const state = await issuedState();
     class FlakyRefreshStore extends KvStore {
       override async getRefreshToken(): Promise<string | null> {

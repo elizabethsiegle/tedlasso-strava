@@ -90,6 +90,12 @@ export async function handleCallback(
   // snapshot attempt fails — the next scheduled run will populate it. Sending
   // the owner back to re-authorize over an already-resolved problem would be
   // wrong, so a failure here is swallowed rather than surfaced.
+  //
+  // runRefresh does not currently reject — it wraps its own body in a
+  // try/catch and always resolves a RefreshResult, even on failure. This
+  // wrap is defensive insurance against a future change that reintroduces
+  // a throw there; without it, that change would cost the owner a
+  // completed authorization.
   try {
     await runRefresh(deps, nowMs);
   } catch {
