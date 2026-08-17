@@ -1,9 +1,28 @@
 import { handleCallback, handleLogin, hasSetupKey, type AuthDeps } from "./app/auth";
 import { renderPage } from "./app/render";
 import { runRefresh } from "./app/refresh";
+import { getMood } from "./data/moods";
+import { pickQuote } from "./domain/quote";
 import { TUNING } from "./domain/tuning";
 import { KvStore } from "./infrastructure/store/kv";
 import { StravaClient } from "./infrastructure/strava/client";
+import type { Snapshot } from "./types";
+
+/** The state shown when previewing a mood with no live snapshot yet. */
+const EMPTY_PREVIEW_SNAPSHOT: Snapshot = {
+  version: 1,
+  refreshedAt: 0,
+  mood: { id: "preseason", name: "Preseason", accent: "#6B7A8F" },
+  quote: { text: "", character: "" },
+  gif: null,
+  scores: { consistency: 0, charge: 0 },
+  reasons: [],
+  facts: {
+    last: null, daysSinceLast: null, countLast7: 0,
+    baselineWeekly: 0, streakDays: 0, totalActivities: 0,
+  },
+  route: null,
+};
 
 export interface Env {
   STORE: KVNamespace;
@@ -81,13 +100,32 @@ export default {
     if (url.pathname === "/") {
       const store = new KvStore(env.STORE);
       const [snapshot, health] = await Promise.all([store.getSnapshot(), store.getHealth()]);
+
+      const previewId = url.searchParams.get("preview");
+      const previewMood = previewId ? getMood(previewId) : undefined;
+
+      let shown = snapshot;
+      let previewNotice: string | null = null;
+
+      if (previewMood) {
+        const { quote, gif } = pickQuote(previewMood, nowMs);
+        const base = snapshot ?? EMPTY_PREVIEW_SNAPSHOT;
+        shown = {
+          ...base,
+          mood: { id: previewMood.id, name: previewMood.name, accent: previewMood.accent },
+          quote,
+          gif: gif ? { url: gif.url, alt: gif.alt } : null,
+        };
+        previewNotice = `Preview — not your live mood.`;
+      }
+
       return new Response(
         renderPage({
-          snapshot,
+          snapshot: shown,
           health,
           nowMs,
           showRefreshButton: hasSetupKey(request, env.SETUP_KEY),
-          previewNotice: null,
+          previewNotice,
         }),
         { headers: { "content-type": "text/html; charset=utf-8" } },
       );

@@ -1,3 +1,4 @@
+import type { RouteRender } from "../domain/route";
 import { TUNING } from "../domain/tuning";
 import type { Health, Snapshot } from "../types";
 import { STYLES } from "./styles";
@@ -17,6 +18,18 @@ export function escapeHtml(value: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+/**
+ * A lighter escape for plain text nodes (never attribute values), where only
+ * `&`/`<`/`>` are structurally dangerous. Mood names are trusted, versioned
+ * catalogue data (never Strava- or user-influenced) — quote-escaping them
+ * only mangles apostrophes like "Where'd You Go" for no security benefit.
+ * Anything Strava- or user-influenced (locationLabel, quote text) still goes
+ * through the stricter `escapeHtml`.
+ */
+function escapeText(value: string): string {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 function km(metres: number): string {
@@ -56,6 +69,34 @@ function receipts(snapshot: Snapshot): string {
   return `<table class="receipts"><tbody>${rows
     .map(([label, value]) => `<tr><th scope="row">${label}</th><td>${value}</td></tr>`)
     .join("")}</tbody></table>`;
+}
+
+export function renderRoute(route: RouteRender | null, snapshot: Snapshot): string {
+  if (!route) {
+    const sport = snapshot.facts.last?.sportType ?? "Session";
+    const time = snapshot.facts.last ? duration(snapshot.facts.last.movingTimeS) : "";
+    return `<section class="route"><div class="route-frame">
+      <p class="route-none">No route — ${escapeHtml(sport)} ${escapeHtml(time)}</p>
+    </div></section>`;
+  }
+
+  const place = route.locationLabel
+    ? `<span class="route-place">${escapeHtml(route.locationLabel)}</span>`
+    : "";
+
+  return `<section class="route"><div class="route-frame">
+    <svg viewBox="${escapeHtml(route.viewBox)}" role="img"
+         aria-label="Route of the last ${escapeHtml(route.sportType)}, ${km(route.distanceM)} kilometres">
+      <path d="${escapeHtml(route.pathD)}" fill="none" stroke="var(--ink-accent)"
+            stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div class="route-caption">
+      <span>${km(route.distanceM)} km</span>
+      <span>${Math.round(route.elevationM)} m up</span>
+      <span>${escapeHtml(route.sportType)}</span>
+      ${place}
+    </div>
+  </div></section>`;
 }
 
 /** The state before the first successful fetch, and when there is nothing to show. */
@@ -121,14 +162,14 @@ export function renderPage(view: PageView): string {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${escapeHtml(mood.name)} — tedlasso-strava</title>
+<title>${escapeText(mood.name)} — tedlasso-strava</title>
 <meta name="robots" content="noindex">
 <style>${STYLES}</style>
 </head>
 <body style="--ink-accent: ${escapeHtml(mood.accent)}">
 <main class="sheet">
   <header class="masthead">
-    <h1 class="mood-name">${escapeHtml(mood.name)}</h1>
+    <h1 class="mood-name">${escapeText(mood.name)}</h1>
     <div class="masthead-meta">Matchday report ${staleStamp}</div>
   </header>
 
@@ -144,6 +185,7 @@ export function renderPage(view: PageView): string {
   </section>
 
   <hr class="rule">
+  ${snapshot ? renderRoute(snapshot.route, snapshot) : ""}
   ${snapshot ? receipts(snapshot) : ""}
 
   <footer class="footer">

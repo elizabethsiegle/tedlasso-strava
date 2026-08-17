@@ -139,4 +139,23 @@ button.refresh {
   border: 0; padding: .5rem .9rem; cursor: pointer;
 }
 button.refresh[disabled] { opacity: .45; cursor: wait; }
+
+.route { margin-top: 1.75rem; border-top: 1px solid var(--rule); padding-top: .9rem; }
+.route-frame { border: 1px solid var(--rule); padding: .75rem; }
+.route svg { display: block; width: 100%; height: auto; }
+.route-caption {
+  display: flex; gap: 1.25rem; flex-wrap: wrap;
+  margin-top: .6rem;
+  font-family: var(--display);
+  font-size: .68rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+.route-none {
+  font-family: var(--display); font-weight: 800;
+  font-size: clamp(1.25rem, 4vw, 2rem);
+  letter-spacing: -.02em; text-transform: uppercase;
+  color: var(--ink-soft);
+  padding: 2.5rem .25rem;
+}
 `;
