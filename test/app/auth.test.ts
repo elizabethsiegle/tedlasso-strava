@@ -141,6 +141,51 @@ describe("handleCallback", () => {
       new Request(`https://x/auth/callback?code=c&state=${state}`), deps(anon), NOW,
     );
     expect(res.status).toBe(403);
+    expect(await new KvStore(kv()).getRefreshToken()).toBeNull();
+  });
+
+  it("burns the nonce even when the exchange fails, so a stale code cannot be retried", async () => {
+    const state = await issuedState();
+    const failing = new StravaClient("cid", "sec", async () => {
+      throw new Error("expired authorization code");
+    });
+    const url = `https://x/auth/callback?code=c&state=${state}`;
+
+    const first = await handleCallback(new Request(url), deps(failing), NOW);
+    expect(first.status).toBe(502);
+
+    const second = await handleCallback(new Request(url), deps(failing), NOW);
+    expect(second.status).toBe(400);
+  });
+
+  it("502s and writes nothing when the code exchange fails", async () => {
+    const state = await issuedState();
+    const failing = new StravaClient("cid", "sec", async () => {
+      throw new Error("this is a secret detail that must not leak: sec/redirect_uri");
+    });
+    const res = await handleCallback(
+      new Request(`https://x/auth/callback?code=c&state=${state}`), deps(failing), NOW,
+    );
+    expect(res.status).toBe(502);
+    const body = await res.text();
+    expect(body).not.toContain("secret detail");
+    expect(await new KvStore(kv()).getRefreshToken()).toBeNull();
+  });
+
+  it("still stores the token and redirects home when the post-connect refresh throws", async () => {
+    const state = await issuedState();
+    class FlakyRefreshStore extends KvStore {
+      override async getRefreshToken(): Promise<string | null> {
+        throw new Error("kv unavailable");
+      }
+    }
+    const d = { ...deps(), store: new FlakyRefreshStore(kv()) };
+    const res = await handleCallback(
+      new Request(`https://x/auth/callback?code=c&state=${state}`), d, NOW,
+    );
+    expect(res.status).toBe(302);
+    expect(res.headers.get("location")).toBe("/");
+    expect(await new KvStore(kv()).getRefreshToken()).toBe("ref-new");
   });
 
   it("stores the token and redirects home on success", async () => {
