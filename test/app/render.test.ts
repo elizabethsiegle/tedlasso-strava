@@ -131,10 +131,70 @@ describe("renderPage", () => {
     expect(html).not.toContain("Loading");
   });
 
-  it("shows a reconnect link when reauthorization is needed", () => {
-    const html = renderPage(view({ health: { ...EMPTY_HEALTH, needsReauth: true } }));
-    expect(html).toContain("/auth/login");
+  it("shows a working reconnect link, with the key, when reauthorization is needed and a key is available", () => {
+    const html = renderPage(
+      view({
+        health: { ...EMPTY_HEALTH, needsReauth: true, lastSuccessAt: NOW - 3_600_000 },
+        setupKey: "s3cret",
+      }),
+    );
+    expect(html).toContain("/auth/login?key=s3cret");
     expect(html).toContain("Reconnect");
+  });
+
+  it("does not offer a link that will 404 when reauthorization is needed but no key is available", () => {
+    const html = renderPage(
+      view({ health: { ...EMPTY_HEALTH, needsReauth: true, lastSuccessAt: NOW - 3_600_000 } }),
+    );
+    expect(html).not.toContain("/auth/login");
+    expect(html).toContain("visit the setup URL");
+  });
+
+  it("URL-encodes the setup key in the reconnect link", () => {
+    const html = renderPage(
+      view({
+        health: { ...EMPTY_HEALTH, needsReauth: true, lastSuccessAt: NOW - 3_600_000 },
+        setupKey: "a b&c",
+      }),
+    );
+    expect(html).toContain(`/auth/login?key=${encodeURIComponent("a b&c")}`);
+  });
+
+  it("tells a new owner to connect Strava for the first time, not that access has lapsed, on a never-connected site", () => {
+    const html = renderPage(
+      view({
+        snapshot: null,
+        health: { ...EMPTY_HEALTH, needsReauth: true, lastSuccessAt: null },
+        setupKey: "s3cret",
+      }),
+    );
+    expect(html.toLowerCase()).not.toContain("lapsed");
+    expect(html.toLowerCase()).not.toContain("last one we recorded");
+    expect(html).toContain("hasn't been connected yet");
+    expect(html).toContain("/auth/login?key=s3cret");
+  });
+
+  it("keeps the genuine lapse copy when a snapshot or prior success exists", () => {
+    const html = renderPage(
+      view({
+        health: { ...EMPTY_HEALTH, needsReauth: true, lastSuccessAt: NOW - 3_600_000 },
+        setupKey: "s3cret",
+      }),
+    );
+    expect(html).toContain("Strava access has lapsed");
+    expect(html).toContain("the last one we recorded");
+    expect(html.toLowerCase()).not.toContain("hasn't been connected yet");
+  });
+
+  it("does not also show the generic \"first fetch hasn't run\" notice alongside the never-connected copy", () => {
+    const html = renderPage(
+      view({
+        snapshot: null,
+        health: { ...EMPTY_HEALTH, needsReauth: true, lastSuccessAt: null },
+        setupKey: "s3cret",
+      }),
+    );
+    expect(html).not.toContain("The first fetch hasn't run yet");
   });
 
   it("shows a stale marker when the snapshot is older than the threshold", () => {

@@ -108,21 +108,43 @@ export function renderPage(view: PageView): string {
   const ageHours = snapshot ? (nowMs - snapshot.refreshedAt) / 3_600_000 : 0;
   const stale = snapshot !== null && ageHours > TUNING.STALE_SNAPSHOT_HOURS;
 
+  const hasSetupKey = typeof setupKey === "string" && setupKey.length > 0;
+  const loginHref = hasSetupKey ? `/auth/login?key=${encodeURIComponent(setupKey as string)}` : null;
+  // Render a real link only when there is a key to put in it — a bare
+  // `/auth/login` with no `?key=` always 404s, so a link that will only ever
+  // fail is worse than no link at all.
+  const loginLink = (label: string): string =>
+    loginHref
+      ? `<a href="${escapeHtml(loginHref)}">${escapeHtml(label)}</a>`
+      : `visit the setup URL`;
+
+  // A fresh deploy's very first cron run also sets needsReauth (the
+  // "no-token" branch of runRefresh) — that is not a lapse, it is a site that
+  // has never been connected. Both signals are required: a null snapshot
+  // alone could just mean "the first fetch hasn't run yet" for an
+  // otherwise-healthy site the moment before its first success.
+  const neverConnected = health.needsReauth && snapshot === null && health.lastSuccessAt === null;
+
   const notices: string[] = [];
   if (previewNotice) {
     notices.push(`<p class="notice">${escapeHtml(previewNotice)}</p>`);
   }
-  if (health.needsReauth) {
+  if (neverConnected) {
+    notices.push(
+      `<p class="notice">Strava hasn't been connected yet — this site has never completed a fetch. ` +
+        `${loginLink("Connect Strava")} to get started.</p>`,
+    );
+  } else if (health.needsReauth) {
     notices.push(
       `<p class="notice">Strava access has lapsed — the mood below is the last one we recorded. ` +
-        `<a href="/auth/login">Reconnect Strava</a>.</p>`,
+        `${loginLink("Reconnect Strava")}.</p>`,
     );
   }
-  if (!snapshot) {
+  if (!snapshot && !neverConnected) {
     notices.push(
       `<p class="notice">The first fetch hasn't run yet. Once it does, this page fills in on its own.</p>`,
     );
-  } else if (snapshot.facts.totalActivities === 0) {
+  } else if (snapshot && snapshot.facts.totalActivities === 0) {
     // Kind copy, not scolding: 90 quiet days is a fact, not a failing, and this
     // is a Ted Lasso site.
     notices.push(
