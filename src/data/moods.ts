@@ -51,7 +51,7 @@ export const MOODS: Mood[] = [
     gifs: [
       {
         url: "https://media.giphy.com/media/RzE8jPRlLeEyEB6Dmf/giphy.gif",
-        alt: "Ted Lasso looks nervous and anxious in this animated clip.",
+        alt: "Ted Lasso looks nervous and anxious.",
         source: "Giphy",
         verifiedOn: "2026-08-16",
       },
@@ -94,7 +94,7 @@ export const MOODS: Mood[] = [
     gifs: [
       {
         url: "https://media.giphy.com/media/5B925WaCAIWojy3KMG/giphy.gif",
-        alt: "Ted Lasso's animated GIF conveys a hopeful believe message.",
+        alt: "Ted Lasso conveys a hopeful believe message.",
         source: "Giphy",
         verifiedOn: "2026-08-16",
       },
@@ -122,7 +122,7 @@ export const MOODS: Mood[] = [
       },
       {
         url: "https://media.giphy.com/media/Zod24bq6PTegwxMAcK/giphy.gif",
-        alt: "Roy Kent scowls and turns away in blunt irritation.",
+        alt: "Roy Kent's scowl conveys blunt irritation.",
         source: "Giphy",
         verifiedOn: "2026-08-16",
       },

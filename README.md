@@ -73,11 +73,12 @@ curl "http://localhost:8787/__scheduled?cron=0+*/4+*+*+*"
 distance, and timing, a rolling sense of workout frequency, and the shape of the route.
 
 Routes are trimmed by `PRIVACY_TRIM_M` metres (default `250`) at both the start and the end,
-and anywhere the route passes back near its own starting point — because the Worker requests
-the `activity:read_all` scope, which bypasses Strava's own privacy zones entirely. Without
-this trimming, the published route would reveal a home address more precisely than the
-athlete's own Strava profile does. As a result, a route may render with a visible gap where
-it enters or exits the trimmed radius — that gap is intentional, not a bug.
+and anywhere the route passes back near either its original start or its original end —
+because the Worker requests the `activity:read_all` scope, which bypasses Strava's own
+privacy zones entirely. Without this trimming, the published route would reveal a home
+address more precisely than the athlete's own Strava profile does. As a result, a route may
+render with a visible gap where it enters or exits the trimmed radius — that gap is
+intentional, not a bug.
 
 Setting `PRIVACY_TRIM_M=0` disables trimming entirely and publishes exact start and end
 coordinates. Do this only if you understand and accept that trade-off.
