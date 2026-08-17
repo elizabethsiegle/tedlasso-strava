@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers";
 import { beforeEach, describe, expect, it } from "vitest";
-import { handleCallback, handleLogin, timingSafeEqual } from "../../src/app/auth";
+import { handleCallback, handleLogin, hasSetupKey, timingSafeEqual } from "../../src/app/auth";
 import { KvStore } from "../../src/infrastructure/store/kv";
 import { StravaClient } from "../../src/infrastructure/strava/client";
 
@@ -34,6 +34,21 @@ describe("timingSafeEqual", () => {
     expect(timingSafeEqual("abc", "abd")).toBe(false);
     expect(timingSafeEqual("abc", "ab")).toBe(false);
     expect(timingSafeEqual("", "")).toBe(true);
+  });
+});
+
+describe("hasSetupKey", () => {
+  it("returns false rather than throwing when SETUP_KEY is unset (a plausible pre-setup deploy)", () => {
+    expect(() => hasSetupKey(new Request("https://x/auth/login?key=anything"), undefined)).not.toThrow();
+    expect(hasSetupKey(new Request("https://x/auth/login?key=anything"), undefined)).toBe(false);
+  });
+
+  it("returns false for an empty configured key", () => {
+    expect(hasSetupKey(new Request("https://x/auth/login?key="), "")).toBe(false);
+  });
+
+  it("returns true when the provided key matches", () => {
+    expect(hasSetupKey(new Request("https://x/auth/login?key=s3cret"), "s3cret")).toBe(true);
   });
 });
 

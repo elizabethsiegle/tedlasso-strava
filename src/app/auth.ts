@@ -19,9 +19,16 @@ export function timingSafeEqual(a: string, b: string): boolean {
   return diff === 0;
 }
 
-export function hasSetupKey(request: Request, setupKey: string): boolean {
+/**
+ * `setupKey` is typed `string` in Env, but a pre-setup deploy (SETUP_KEY
+ * never configured) is a plausible real state in which it arrives as
+ * `undefined` at runtime regardless of what the type says — guard rather
+ * than let `.length` throw a bare 500 out of a request handler.
+ */
+export function hasSetupKey(request: Request, setupKey: string | undefined): boolean {
+  if (typeof setupKey !== "string" || setupKey.length === 0) return false;
   const provided = new URL(request.url).searchParams.get("key");
-  return provided !== null && setupKey.length > 0 && timingSafeEqual(provided, setupKey);
+  return provided !== null && timingSafeEqual(provided, setupKey);
 }
 
 function newNonce(): string {

@@ -157,6 +157,45 @@ describe("runRefresh", () => {
     expect((await new KvStore(kv()).getHealth()).needsReauth).toBe(false);
   });
 
+  it("keeps a standing needsReauth notice when a later failure is NOT an auth failure", async () => {
+    // If the token was already revoked (needsReauth: true) and the next
+    // attempt merely rate-limits, the reconnect notice must not disappear —
+    // it should only clear on an actual successful refresh.
+    const store = new KvStore(kv());
+    await store.putHealth({ lastAttemptAt: 1, lastSuccessAt: null, lastError: "old", needsReauth: true });
+    await store.putRefreshToken("ref-old");
+    const strava = new StravaClient("cid", "sec", async (input) =>
+      input.startsWith("https://www.strava.com/oauth/token")
+        ? json({ access_token: "a", refresh_token: "r", expires_at: 1 })
+        : json({}, 429),
+    );
+
+    const result = await runRefresh(deps(strava), NOW);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toBe("rate-limit");
+    expect((await store.getHealth()).needsReauth).toBe(true);
+  });
+
+  it("refuses to persist an empty refresh_token, and treats it as an auth failure instead", async () => {
+    const before = await seedSnapshot();
+    await new KvStore(kv()).putRefreshToken("ref-good");
+    const strava = new StravaClient("cid", "sec", async (input) =>
+      input.startsWith("https://www.strava.com/oauth/token")
+        ? json({ access_token: "a", refresh_token: "", expires_at: 1 })
+        : json([ACTIVITY]),
+    );
+
+    const result = await runRefresh(deps(strava), NOW);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toBe("auth");
+
+    // The working credential must survive: a falsy refresh_token in an
+    // otherwise-200 response must never overwrite it.
+    expect(await new KvStore(kv()).getRefreshToken()).toBe("ref-good");
+    expect(await new KvStore(kv()).getSnapshot()).toEqual(before);
+    expect((await new KvStore(kv()).getHealth()).needsReauth).toBe(true);
+  });
+
   it("clears a previous needsReauth after a good refresh", async () => {
     const store = new KvStore(kv());
     await store.putHealth({ lastAttemptAt: 1, lastSuccessAt: null, lastError: "old", needsReauth: true });

@@ -45,6 +45,15 @@ export async function runRefresh(deps: RefreshDeps, nowMs: number): Promise<Refr
 
     const token = await strava.refresh(currentToken);
 
+    // A parseable 200 with a missing/empty refresh_token is not a success: if
+    // it were persisted, it would silently destroy the one working credential
+    // and lock the app out on the very next refresh. Refuse and classify it as
+    // an auth failure instead — the previous, still-valid refresh token in KV
+    // is left untouched.
+    if (!token.refreshToken) {
+      throw new StravaAuthError("token refresh: response had no refresh_token");
+    }
+
     // Rotation is persisted before the access token is used for anything else.
     // Strava invalidates the old refresh token the instant this one is issued;
     // if the Worker dies before this write lands, the stored token is still the
@@ -112,7 +121,11 @@ export async function runRefresh(deps: RefreshDeps, nowMs: number): Promise<Refr
         ...health,
         lastAttemptAt: nowMs,
         lastError: message,
-        needsReauth: reason === "auth",
+        // A non-auth failure (rate limit, network blip, etc.) must not clear
+        // a standing reconnect notice: if the token was already revoked and
+        // this attempt merely failed for some other reason, the notice has
+        // to survive until an actual successful refresh clears it.
+        needsReauth: reason === "auth" || health.needsReauth,
       });
     } catch {
       // Best-effort: if KV itself is what's failing, we cannot record the
