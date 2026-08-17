@@ -81,7 +81,11 @@ export const MOODS: Mood[] = [
   {
     id: "believe",
     name: "Believe",
-    accent: "#F2C14E",
+    // Darkened from the original #F2C14E: that pale gold cleared 11:1 against
+    // the dark stock but only 1.49:1 against the light one -- unreadable as
+    // this mood's headline and route-map color. This deeper amber keeps the
+    // same hue/saturation and clears 3:1 (WCAG large-text) against both.
+    accent: "#9A700B",
     verifiedOn: "2026-08-14",
     quotes: [
       { text: "Believe.", character: "AFC Richmond locker room" },
@@ -207,7 +211,10 @@ export const MOODS: Mood[] = [
   {
     id: "gaffer-mode",
     name: "Gaffer Mode",
-    accent: "#34495E",
+    // Lightened from the original #34495E: that navy cleared 8.23:1 against
+    // the light stock but only 1.99:1 against the dark one. This keeps the
+    // same navy-slate hue and saturation, lifted to clear 3:1 against both.
+    accent: "#56799C",
     verifiedOn: "2026-08-14",
     quotes: [
       {
@@ -225,7 +232,10 @@ export const MOODS: Mood[] = [
   {
     id: "hopeful",
     name: "Hopeful",
-    accent: "#C77DBB",
+    // Darkened from the original #C77DBB: that orchid pink cleared 6.23:1
+    // against the dark stock but only 2.63:1 against the light one. Same hue
+    // and saturation, deepened to clear 3:1 against both.
+    accent: "#B24DA2",
     verifiedOn: "2026-08-14",
     quotes: [
       { text: "I believe in hope. I believe in believe.", character: "Ted Lasso" },
@@ -244,7 +254,10 @@ export const MOODS: Mood[] = [
   {
     id: "biscuits",
     name: "Biscuits",
-    accent: "#D98B5F",
+    // Darkened from the original #D98B5F: that terracotta cleared 6.87:1
+    // against the dark stock but only 2.38:1 against the light one. Same hue
+    // and saturation, deepened to clear 3:1 against both.
+    accent: "#B95F2C",
     verifiedOn: "2026-08-14",
     quotes: [
       { text: "Biscuits with the boss.", character: "Ted Lasso" },

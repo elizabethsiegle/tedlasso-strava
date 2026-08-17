@@ -1,6 +1,34 @@
 import { describe, expect, it } from "vitest";
 import { MOODS, getMood } from "../../src/data/moods";
 
+// The two `--stock` background values from src/app/styles.ts: the newsprint
+// light theme and the dark theme. Kept as literal values here (not imported)
+// so this test does not silently stop checking anything if styles.ts's
+// selector structure changes -- these are the two actual page backgrounds an
+// accent renders against.
+const STOCK_LIGHT = "#F4F1E8";
+const STOCK_DARK = "#14140F";
+
+/** WCAG relative luminance: proper sRGB gamma expansion, not a naive average. */
+function relativeLuminance(hex: string): number {
+  const n = Number.parseInt(hex.slice(1), 16);
+  const channels = [(n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff].map((c) => {
+    const s = c / 255;
+    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+  });
+  const [r, g, b] = channels as [number, number, number];
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+/** WCAG contrast ratio between two colors, order-independent. */
+function contrastRatio(a: string, b: string): number {
+  const la = relativeLuminance(a);
+  const lb = relativeLuminance(b);
+  const lighter = Math.max(la, lb);
+  const darker = Math.min(la, lb);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
 const REQUIRED_IDS = [
   "preseason", "whered-you-go", "believe", "roy-kent", "comeback-szn",
   "diamond-dogs", "football-is-life", "gaffer-mode", "hopeful", "biscuits",
@@ -51,6 +79,15 @@ describe("mood catalogue", () => {
   it("never uses forbidden record language", () => {
     const all = MOODS.flatMap((m) => m.quotes.map((q) => q.text)).join(" ").toLowerCase();
     expect(all).not.toContain("personal record");
+  });
+
+  it("clears WCAG large-text contrast (3:1) against both newsprint backgrounds for every accent", () => {
+    for (const m of MOODS) {
+      const light = contrastRatio(m.accent, STOCK_LIGHT);
+      const dark = contrastRatio(m.accent, STOCK_DARK);
+      expect(light, `${m.id} (${m.accent}) against light stock`).toBeGreaterThanOrEqual(3);
+      expect(dark, `${m.id} (${m.accent}) against dark stock`).toBeGreaterThanOrEqual(3);
+    }
   });
 
   it("resolves a known id and rejects an unknown one", () => {
