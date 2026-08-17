@@ -140,9 +140,10 @@ export function renderPage(view: PageView): string {
     );
   }
 
-  const gif = snapshot?.gif
-    ? `<img class="gif" src="${escapeHtml(snapshot.gif.url)}" alt="${escapeHtml(snapshot.gif.alt)}" ` +
-      `loading="eager" decoding="async">`
+  const hasGif = Boolean(snapshot?.gif);
+  const gifColumn = snapshot?.gif
+    ? `<div class="hero-gif"><img class="gif" src="${escapeHtml(snapshot.gif.url)}" alt="${escapeHtml(snapshot.gif.alt)}" ` +
+      `loading="eager" decoding="async"></div>`
     : "";
 
   const reasons = snapshot?.reasons.length
@@ -175,13 +176,13 @@ export function renderPage(view: PageView): string {
 
   ${notices.join("")}
 
-  <section class="hero">
-    <div>
+  <section class="hero${hasGif ? " hero--with-gif" : ""}">
+    <div class="hero-copy">
       <blockquote class="quote">${escapeHtml(quote.text)}</blockquote>
       <p class="attribution">${escapeHtml(quote.character)}</p>
       ${reasons}
     </div>
-    <div>${gif}</div>
+    ${gifColumn}
   </section>
 
   <hr class="rule">

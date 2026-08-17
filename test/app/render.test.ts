@@ -77,6 +77,25 @@ describe("renderPage", () => {
     expect(html).not.toContain("<img");
   });
 
+  it("collapses the hero to a single column when there is no gif", () => {
+    const html = renderPage(view({ snapshot: snapshot({ gif: null }) }));
+    // Match the <section> tag itself, not a bare substring — the inlined
+    // stylesheet's own ".hero--with-gif" selector would otherwise make a
+    // plain toContain() check on the whole document pass regardless of the
+    // actual markup emitted.
+    const heroTag = html.match(/<section class="([^"]*)">/);
+    expect(heroTag?.[1]).toBe("hero");
+    // No reserved second track: the gif column container is not emitted at all.
+    expect(html).not.toContain(`<div class="hero-gif">`);
+  });
+
+  it("uses the two-column hero treatment when a gif exists", () => {
+    const html = renderPage(view());
+    const heroTag = html.match(/<section class="([^"]*)">/);
+    expect(heroTag?.[1]).toBe("hero hero--with-gif");
+    expect(html).toContain(`<div class="hero-gif">`);
+  });
+
   it("shows the receipts", () => {
     const html = renderPage(view());
     expect(html).toContain("Long Run");
