@@ -35,13 +35,32 @@ export interface Env {
   SETUP_KEY: string;
 }
 
+/**
+ * Distinguishes a deliberate privacy-trim opt-out from a plumbing mistake,
+ * using the RAW string rather than the coerced number. `Number("")`,
+ * `Number(" ")`, and `Number("\n")` are all `0`, which is indistinguishable
+ * from the documented opt-out once coerced — so the raw string is checked
+ * first. Only a trimmed value of exactly "0" is the opt-out; empty,
+ * whitespace-only, or non-numeric values are misconfigurations and fall back
+ * to the safe default rather than silently publishing an untrimmed route.
+ * A negative number (e.g. "-1") is passed through unchanged so buildRoute's
+ * own guard can throw on it — that is a genuinely invalid number, not a
+ * missing/blank var, and this function's job is only to catch the latter.
+ */
+export function resolvePrivacyTrim(raw: string | undefined): number {
+  const trimmed = (raw ?? "").trim();
+  if (trimmed === "0") return 0;
+  if (trimmed === "") return TUNING.DEFAULT_PRIVACY_TRIM_M;
+  const n = Number(trimmed);
+  return Number.isFinite(n) ? n : TUNING.DEFAULT_PRIVACY_TRIM_M;
+}
+
 function buildDeps(env: Env): AuthDeps {
-  const trim = Number(env.PRIVACY_TRIM_M);
   return {
     store: new KvStore(env.STORE),
     strava: new StravaClient(env.STRAVA_CLIENT_ID, env.STRAVA_CLIENT_SECRET),
     tz: env.TIMEZONE || "UTC",
-    privacyTrimM: Number.isFinite(trim) ? trim : TUNING.DEFAULT_PRIVACY_TRIM_M,
+    privacyTrimM: resolvePrivacyTrim(env.PRIVACY_TRIM_M),
     clientId: env.STRAVA_CLIENT_ID,
     athleteId: env.STRAVA_ATHLETE_ID,
     setupKey: env.SETUP_KEY,

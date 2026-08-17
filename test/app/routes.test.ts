@@ -1,7 +1,10 @@
 import { env } from "cloudflare:workers";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import worker from "../../src/worker";
+import worker, { resolvePrivacyTrim } from "../../src/worker";
 import { KvStore } from "../../src/infrastructure/store/kv";
+import { TUNING } from "../../src/domain/tuning";
+import { buildRoute } from "../../src/domain/route";
+import { makeActivity } from "../fixtures/activities";
 
 const kv = (): KVNamespace => (env as never as { STORE: KVNamespace }).STORE;
 
@@ -39,6 +42,38 @@ function kvThatFailsOn(failingKey: string): KVNamespace {
     delete: async () => {},
   } as unknown as KVNamespace;
 }
+
+describe("resolvePrivacyTrim", () => {
+  it("falls back to the default for an absent var", () => {
+    expect(resolvePrivacyTrim(undefined)).toBe(TUNING.DEFAULT_PRIVACY_TRIM_M);
+  });
+
+  it("falls back to the default for an empty string", () => {
+    expect(resolvePrivacyTrim("")).toBe(TUNING.DEFAULT_PRIVACY_TRIM_M);
+  });
+
+  it("falls back to the default for a whitespace-only string", () => {
+    expect(resolvePrivacyTrim(" ")).toBe(TUNING.DEFAULT_PRIVACY_TRIM_M);
+    expect(resolvePrivacyTrim("\n")).toBe(TUNING.DEFAULT_PRIVACY_TRIM_M);
+  });
+
+  it("falls back to the default for a non-numeric string", () => {
+    expect(resolvePrivacyTrim("abc")).toBe(TUNING.DEFAULT_PRIVACY_TRIM_M);
+  });
+
+  it("treats an explicit \"0\" as the deliberate opt-out, not a misconfiguration", () => {
+    expect(resolvePrivacyTrim("0")).toBe(0);
+  });
+
+  it("parses an ordinary configured value", () => {
+    expect(resolvePrivacyTrim("250")).toBe(250);
+  });
+
+  it("passes a negative value through unchanged, so buildRoute's own guard can reject it", () => {
+    expect(resolvePrivacyTrim("-1")).toBe(-1);
+    expect(() => buildRoute(makeActivity(), resolvePrivacyTrim("-1"))).toThrow();
+  });
+});
 
 describe("routing", () => {
   beforeEach(async () => {
