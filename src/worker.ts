@@ -56,16 +56,42 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
+/**
+ * Distinguishes the fetch() call made by REFRESH_SCRIPT (which asks for JSON)
+ * from a native <form> submission (which doesn't). Browsers never send
+ * `Accept: application/json` on a plain form POST.
+ */
+function wantsJson(request: Request): boolean {
+  return (request.headers.get("accept") ?? "").includes("application/json");
+}
+
+/**
+ * The no-JS fallback: rather than dumping the raw JSON body in front of the
+ * user with no way back, send them to the page that already knows how to
+ * render the current state. 303 (not 302) is what turns this POST into a GET
+ * on the follow-up request.
+ */
+function redirectHome(url: URL): Response {
+  const dest = new URL("/", url);
+  const key = url.searchParams.get("key");
+  if (key !== null) dest.searchParams.set("key", key);
+  return new Response(null, { status: 303, headers: { location: dest.toString() } });
+}
+
 async function handleManualRefresh(request: Request, env: Env, nowMs: number): Promise<Response> {
   const deps = buildDeps(env);
+  const url = new URL(request.url);
 
   if (request.method !== "POST") {
     return new Response("Method not allowed", { status: 405, headers: { allow: "POST" } });
   }
   if (!hasSetupKey(request, deps.setupKey)) return new Response("Not found", { status: 404 });
 
+  const asksForJson = wantsJson(request);
+
   const lastAt = await deps.store.getLastManualRefreshAt();
   if (lastAt !== null && nowMs - lastAt < TUNING.MANUAL_REFRESH_COOLDOWN_MS) {
+    if (!asksForJson) return redirectHome(url);
     const waitS = Math.ceil((TUNING.MANUAL_REFRESH_COOLDOWN_MS - (nowMs - lastAt)) / 1000);
     return new Response(JSON.stringify({ ok: false, reason: "cooldown", retryAfterSeconds: waitS }), {
       status: 429,
@@ -78,11 +104,13 @@ async function handleManualRefresh(request: Request, env: Env, nowMs: number): P
 
   try {
     const result = await runRefresh(deps, nowMs);
+    if (!asksForJson) return redirectHome(url);
     return json(result, result.ok ? 200 : 502);
   } catch (error) {
     // runRefresh is written to never throw, but this is the boundary the
     // caller sees: a KV blip here must still surface as the same JSON error
     // shape, never a bare 500.
+    if (!asksForJson) return redirectHome(url);
     const message = error instanceof Error ? error.message : String(error);
     return json({ ok: false, reason: "error", message }, 502);
   }

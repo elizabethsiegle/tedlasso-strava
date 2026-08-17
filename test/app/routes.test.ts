@@ -97,7 +97,10 @@ describe("POST /api/refresh", () => {
     // down (floor). A margin of 500ms either side of the second boundary is
     // far more slack than this synchronous KV round-trip needs.
     await new KvStore(kv()).putLastManualRefreshAt(Date.now() - 14_500);
-    const req = new Request("https://x/api/refresh?key=s3cret", { method: "POST" });
+    const req = new Request("https://x/api/refresh?key=s3cret", {
+      method: "POST",
+      headers: { accept: "application/json" },
+    });
     const res = await worker.fetch(req, testEnv(), ctx());
     expect(res.status).toBe(429);
 
@@ -125,18 +128,46 @@ describe("POST /api/refresh", () => {
   });
 
   it("returns a JSON body describing the failure when not connected", async () => {
-    const req = new Request("https://x/api/refresh?key=s3cret", { method: "POST" });
+    const req = new Request("https://x/api/refresh?key=s3cret", {
+      method: "POST",
+      headers: { accept: "application/json" },
+    });
     const res = await worker.fetch(req, testEnv(), ctx());
     expect(res.headers.get("content-type")).toContain("application/json");
     expect(await res.json()).toMatchObject({ ok: false, reason: "no-token" });
   });
 
   it("returns a JSON error body rather than a 500 when the store rejects mid-refresh", async () => {
-    const req = new Request("https://x/api/refresh?key=s3cret", { method: "POST" });
+    const req = new Request("https://x/api/refresh?key=s3cret", {
+      method: "POST",
+      headers: { accept: "application/json" },
+    });
     const res = await worker.fetch(req, testEnv({ STORE: kvThatFailsOn("health") }), ctx());
     expect(res.status).not.toBe(500);
     expect(res.headers.get("content-type")).toContain("application/json");
     expect(await res.json()).toMatchObject({ ok: false });
+  });
+
+  it("redirects a no-JS form submission back to the page, preserving the key, instead of dumping raw JSON", async () => {
+    const req = new Request("https://x/api/refresh?key=s3cret", { method: "POST" });
+    const res = await worker.fetch(req, testEnv(), ctx());
+    expect(res.status).toBe(303);
+    expect(res.headers.get("location")).toBe("https://x/?key=s3cret");
+  });
+
+  it("redirects rather than serving JSON on the cooldown path too, for a no-JS submission", async () => {
+    await new KvStore(kv()).putLastManualRefreshAt(Date.now() - 14_500);
+    const req = new Request("https://x/api/refresh?key=s3cret", { method: "POST" });
+    const res = await worker.fetch(req, testEnv(), ctx());
+    expect(res.status).toBe(303);
+    expect(res.headers.get("location")).toBe("https://x/?key=s3cret");
+  });
+
+  it("redirects rather than serving JSON when the store rejects mid-refresh, for a no-JS submission", async () => {
+    const req = new Request("https://x/api/refresh?key=s3cret", { method: "POST" });
+    const res = await worker.fetch(req, testEnv({ STORE: kvThatFailsOn("health") }), ctx());
+    expect(res.status).toBe(303);
+    expect(res.headers.get("location")).toBe("https://x/?key=s3cret");
   });
 });
 

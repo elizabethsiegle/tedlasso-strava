@@ -28,7 +28,14 @@ describe("refresh ui", () => {
   });
 
   it("carries the setup key through the form action", () => {
-    expect(renderPage(view(true))).toContain("/api/refresh?key=");
+    const html = renderPage({ ...view(true), setupKey: "abc123" });
+    expect(html).toContain("/api/refresh?key=abc123");
+  });
+
+  it("url-encodes a setup key that needs encoding", () => {
+    const html = renderPage({ ...view(true), setupKey: "a b&c" });
+    expect(html).toContain(`key=${encodeURIComponent("a b&c")}`);
+    expect(html).not.toContain("key=a b&c");
   });
 
   it("includes the script only when the button is shown", () => {
