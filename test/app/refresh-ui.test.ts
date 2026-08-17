@@ -1,0 +1,46 @@
+import { describe, expect, it } from "vitest";
+import { renderPage } from "../../src/app/render";
+import { EMPTY_HEALTH, type Snapshot } from "../../src/types";
+
+const NOW = Date.parse("2026-08-14T19:00:00Z");
+
+const SNAPSHOT: Snapshot = {
+  version: 1, refreshedAt: NOW,
+  mood: { id: "believe", name: "Believe", accent: "#F2C14E" },
+  quote: { text: "Believe.", character: "AFC Richmond locker room" },
+  gif: null, scores: { consistency: 70, charge: 60 }, reasons: [],
+  facts: {
+    last: null, daysSinceLast: null, countLast7: 0,
+    baselineWeekly: 0, streakDays: 0, totalActivities: 0,
+  },
+  route: null,
+};
+
+function view(showRefreshButton: boolean) {
+  return { snapshot: SNAPSHOT, health: { ...EMPTY_HEALTH }, nowMs: NOW, showRefreshButton, previewNotice: null };
+}
+
+describe("refresh ui", () => {
+  it("wraps the button in a form that posts, so it works without javascript", () => {
+    const html = renderPage(view(true));
+    expect(html).toContain('method="post"');
+    expect(html).toContain('action="/api/refresh');
+  });
+
+  it("carries the setup key through the form action", () => {
+    expect(renderPage(view(true))).toContain("/api/refresh?key=");
+  });
+
+  it("includes the script only when the button is shown", () => {
+    expect(renderPage(view(true))).toContain("<script>");
+    expect(renderPage(view(false))).not.toContain("<script>");
+  });
+
+  it("holds the animation for the tuned minimum duration", () => {
+    expect(renderPage(view(true))).toContain("1200");
+  });
+
+  it("ships no external script sources", () => {
+    expect(renderPage(view(true))).not.toContain("<script src");
+  });
+});

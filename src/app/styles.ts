@@ -155,6 +155,8 @@ button.refresh {
 }
 button.refresh[disabled] { opacity: .45; cursor: wait; }
 
+body[data-refreshing="true"] .hero { opacity: .35; transition: opacity .35s ease; }
+
 .route { margin-top: 1.75rem; border-top: 1px solid var(--rule); padding-top: .9rem; }
 .route-frame { border: 1px solid var(--rule); padding: .75rem; }
 .route svg { display: block; width: 100%; height: auto; }

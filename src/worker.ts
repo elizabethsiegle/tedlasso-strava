@@ -126,6 +126,7 @@ export default {
           nowMs,
           showRefreshButton: hasSetupKey(request, env.SETUP_KEY),
           previewNotice,
+          setupKey: env.SETUP_KEY,
         }),
         { headers: { "content-type": "text/html; charset=utf-8" } },
       );

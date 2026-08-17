@@ -1,6 +1,7 @@
 import type { RouteRender } from "../domain/route";
 import { TUNING } from "../domain/tuning";
 import type { Health, Snapshot } from "../types";
+import { REFRESH_SCRIPT } from "./client";
 import { STYLES } from "./styles";
 
 export interface PageView {
@@ -9,6 +10,7 @@ export interface PageView {
   nowMs: number;
   showRefreshButton: boolean;
   previewNotice: string | null;
+  setupKey?: string;
 }
 
 export function escapeHtml(value: string): string {
@@ -98,7 +100,7 @@ const PRESEASON = {
 };
 
 export function renderPage(view: PageView): string {
-  const { snapshot, health, nowMs, showRefreshButton, previewNotice } = view;
+  const { snapshot, health, nowMs, showRefreshButton, previewNotice, setupKey } = view;
 
   const mood = snapshot?.mood ?? PRESEASON.mood;
   const quote = snapshot?.quote ?? PRESEASON.quote;
@@ -144,7 +146,9 @@ export function renderPage(view: PageView): string {
     : "";
 
   const refreshButton = showRefreshButton
-    ? `<button class="refresh" id="refresh" type="button">Refresh now</button>`
+    ? `<form id="refresh-form" method="post" action="/api/refresh?key=${encodeURIComponent(setupKey ?? "")}">
+         <button class="refresh" id="refresh" type="submit">Refresh now</button>
+       </form>`
     : "";
 
   return `<!doctype html>
@@ -183,6 +187,7 @@ export function renderPage(view: PageView): string {
     <span>${refreshButton}</span>
   </footer>
 </main>
+${showRefreshButton ? `<script>${REFRESH_SCRIPT}</script>` : ""}
 </body>
 </html>`;
 }
