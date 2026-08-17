@@ -54,13 +54,15 @@ describe("pickQuote", () => {
   });
 });
 
-// Every mood in the real catalogue currently ships `gifs: []` (GIF sourcing
-// is a separate follow-up pass — see src/data/moods.ts), so
-// `pickQuote`'s gif-present branch is structurally unreachable using
-// catalogue data alone. This synthetic fixture exists only to pin that
-// branch's behaviour independently of what the catalogue happens to
-// contain. Nothing here is invented into src/data/moods.ts — the fabricated
-// URL lives only in this test file.
+// Six of the ten moods in the real catalogue now ship one or more GIFs (see
+// src/data/moods.ts), so `pickQuote`'s gif-present branch is exercised by
+// catalogue data too — the "works for every mood in the catalogue" test
+// above already covers that. This synthetic fixture still earns its keep by
+// pinning the branch's behaviour independently of whatever the catalogue
+// happens to contain right now, so it does not silently stop testing
+// anything if a future edit removes every GIF from every mood. Nothing here
+// is invented into src/data/moods.ts — the fabricated URL lives only in this
+// test file.
 describe("pickQuote gif selection", () => {
   const syntheticGifs = [
     {

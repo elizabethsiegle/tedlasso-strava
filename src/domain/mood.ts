@@ -15,7 +15,13 @@ function plural(n: number, one: string, many: string): string {
   return n === 1 ? one : many;
 }
 
-function formatCount(n: number): string {
+/**
+ * Exported so app/render.ts's receipts table formats the same number the
+ * exact same way the reasons text does — the two used to be a byte-identical
+ * copy living in each file, which is exactly the kind of drift that lets the
+ * same page contradict itself if only one copy is ever touched again.
+ */
+export function formatCount(n: number): string {
   return Number.isInteger(n) ? String(n) : n.toFixed(1);
 }
 

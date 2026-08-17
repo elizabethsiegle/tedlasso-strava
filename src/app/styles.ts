@@ -72,11 +72,11 @@ body {
   padding: .15rem .4rem;
 }
 
-/* Single column by default — this is the common case, since every mood
-   ships with an empty gif list until the GIF-sourcing pass lands. The
-   second track only opens up when a gif is actually rendered
-   (".hero--with-gif", set in render.ts), so there is never a reserved,
-   empty column sitting beside the quote. */
+/* Single column by default. Six of the ten catalogue moods carry a GIF and
+   four legitimately do not (src/data/moods.ts), so a gif-less render is
+   still a common case, not a placeholder state. The second track only opens
+   up when a gif is actually rendered (".hero--with-gif", set in render.ts),
+   so there is never a reserved, empty column sitting beside the quote. */
 .hero { display: grid; grid-template-columns: 1fr; gap: 1.5rem; padding: 2.5rem 0 1.75rem; }
 @media (min-width: 46rem) {
   .hero.hero--with-gif { grid-template-columns: 1.6fr 1fr; align-items: start; }

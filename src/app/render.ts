@@ -1,3 +1,5 @@
+import { getMood, type Mood } from "../data/moods";
+import { formatCount } from "../domain/mood";
 import type { RouteRender } from "../domain/route";
 import { DAY_MS, TUNING } from "../domain/tuning";
 import type { Health, Snapshot } from "../types";
@@ -64,10 +66,6 @@ function agoLabel(days: number | null): string {
   return `${Math.floor(days)} days ago`;
 }
 
-function count(n: number): string {
-  return Number.isInteger(n) ? String(n) : n.toFixed(1);
-}
-
 function receipts(snapshot: Snapshot): string {
   const f = snapshot.facts;
   const rows: [string, string][] = [
@@ -76,7 +74,7 @@ function receipts(snapshot: Snapshot): string {
     ["Distance", f.last ? `${km(f.last.distanceM)} km` : "—"],
     ["Time", f.last ? duration(f.last.movingTimeS) : "—"],
     ["When", agoLabel(f.daysSinceLast)],
-    ["This week", `${f.countLast7} vs your usual ${count(f.baselineWeekly)}`],
+    ["This week", `${f.countLast7} vs your usual ${formatCount(f.baselineWeekly)}`],
     ["Streak", f.streakDays > 0 ? `${f.streakDays} days` : "—"],
     ["Last 90 days", `${f.totalActivities} activities`],
   ];
@@ -115,20 +113,27 @@ export function renderRoute(route: RouteRender | null, snapshot: Snapshot): stri
   </div></section>`;
 }
 
-/** The state before the first successful fetch, and when there is nothing to show. */
-const PRESEASON = {
-  mood: { id: "preseason", name: "Preseason", accent: "#6B7A8F" },
-  quote: {
-    text: "I believe in hope. I believe in believe.",
-    character: "Ted Lasso",
-  },
-};
+function requireMood(id: string): Mood {
+  const mood = getMood(id);
+  if (!mood) throw new Error(`mood catalogue is missing '${id}'`);
+  return mood;
+}
+
+// The catalogue is the single source for every mood's id/name/accent and
+// quotes — never hardcoded again here. (This used to duplicate "preseason"
+// and its accent verbatim; see also worker.ts's EMPTY_PREVIEW_SNAPSHOT,
+// which now reads from the same catalogue entry.)
+const PRESEASON_MOOD = requireMood("preseason");
 
 export function renderPage(view: PageView): string {
   const { snapshot, health, nowMs, showRefreshButton, previewNotice, setupKey } = view;
 
-  const mood = snapshot?.mood ?? PRESEASON.mood;
-  const quote = snapshot?.quote ?? PRESEASON.quote;
+  const mood = snapshot?.mood ?? {
+    id: PRESEASON_MOOD.id,
+    name: PRESEASON_MOOD.name,
+    accent: PRESEASON_MOOD.accent,
+  };
+  const quote = snapshot?.quote ?? PRESEASON_MOOD.quotes[0]!;
 
   const ageHours = snapshot ? (nowMs - snapshot.refreshedAt) / 3_600_000 : 0;
   const stale = snapshot !== null && ageHours > TUNING.STALE_SNAPSHOT_HOURS;

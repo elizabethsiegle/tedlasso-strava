@@ -19,21 +19,6 @@ export interface Mood {
   verifiedOn: string;
 }
 
-// The literal set of ids the engine can produce. Task 7 (`src/domain/mood.ts`)
-// returns exactly these strings, and Task 12 (`src/app/refresh.ts`) looks
-// moods up by them, so every id here is load-bearing.
-export type MOOD_IDS =
-  | "preseason"
-  | "whered-you-go"
-  | "believe"
-  | "roy-kent"
-  | "comeback-szn"
-  | "diamond-dogs"
-  | "football-is-life"
-  | "gaffer-mode"
-  | "hopeful"
-  | "biscuits";
-
 export const MOODS: Mood[] = [
   {
     id: "preseason",

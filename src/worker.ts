@@ -1,18 +1,29 @@
 import { handleCallback, handleLogin, hasSetupKey, type AuthDeps } from "./app/auth";
 import { renderPage } from "./app/render";
 import { runRefresh } from "./app/refresh";
-import { getMood } from "./data/moods";
+import { getMood, type Mood } from "./data/moods";
 import { pickQuote } from "./domain/quote";
 import { TUNING } from "./domain/tuning";
 import { KvStore } from "./infrastructure/store/kv";
 import { StravaClient } from "./infrastructure/strava/client";
 import type { Snapshot } from "./types";
 
+function requireMood(id: string): Mood {
+  const mood = getMood(id);
+  if (!mood) throw new Error(`mood catalogue is missing '${id}'`);
+  return mood;
+}
+
+// The catalogue is the single source for "preseason"'s id/name/accent — never
+// hardcoded again here (see also app/render.ts's PRESEASON_MOOD, which reads
+// from the same catalogue entry).
+const PRESEASON_MOOD = requireMood("preseason");
+
 /** The state shown when previewing a mood with no live snapshot yet. */
 const EMPTY_PREVIEW_SNAPSHOT: Snapshot = {
   version: 1,
   refreshedAt: 0,
-  mood: { id: "preseason", name: "Preseason", accent: "#6B7A8F" },
+  mood: { id: PRESEASON_MOOD.id, name: PRESEASON_MOOD.name, accent: PRESEASON_MOOD.accent },
   quote: { text: "", character: "" },
   gif: null,
   scores: { consistency: 0, charge: 0 },
