@@ -23,6 +23,23 @@ function testEnv(overrides: Record<string, unknown> = {}) {
   } as never;
 }
 
+/**
+ * A KV binding whose `get` rejects for one specific key and otherwise behaves
+ * like an empty store. Used to force a genuine KV outage at a precise point
+ * (e.g. only `runRefresh`'s internal `getHealth`), without also breaking the
+ * cooldown lookup that runs earlier in the same request.
+ */
+function kvThatFailsOn(failingKey: string): KVNamespace {
+  return {
+    get: async (key: string) => {
+      if (key === failingKey) throw new Error("KV unavailable");
+      return null;
+    },
+    put: async () => {},
+    delete: async () => {},
+  } as unknown as KVNamespace;
+}
+
 describe("routing", () => {
   beforeEach(async () => {
     for (const key of ["token/refresh", "snapshot/current", "health", "refresh/lastAt"]) {
@@ -61,6 +78,7 @@ describe("POST /api/refresh", () => {
   it("405s a GET", async () => {
     const res = await worker.fetch(new Request("https://x/api/refresh?key=s3cret"), testEnv(), ctx());
     expect(res.status).toBe(405);
+    expect(res.headers.get("allow")).toBe("POST");
   });
 
   it("404s without the key", async () => {
@@ -73,12 +91,23 @@ describe("POST /api/refresh", () => {
     expect((await worker.fetch(req, testEnv(), ctx())).status).toBe(404);
   });
 
-  it("429s when called again inside the cooldown", async () => {
-    await new KvStore(kv()).putLastManualRefreshAt(Date.now());
+  it("429s when called again inside the cooldown, with a retry-after that matches the JSON body and rounds up", async () => {
+    // ~14.5s into a 60s cooldown leaves ~45.5s remaining — a fractional value
+    // that only comes out to a whole number if the code rounds UP (ceil), not
+    // down (floor). A margin of 500ms either side of the second boundary is
+    // far more slack than this synchronous KV round-trip needs.
+    await new KvStore(kv()).putLastManualRefreshAt(Date.now() - 14_500);
     const req = new Request("https://x/api/refresh?key=s3cret", { method: "POST" });
     const res = await worker.fetch(req, testEnv(), ctx());
     expect(res.status).toBe(429);
-    expect(res.headers.get("retry-after")).toBeTruthy();
+
+    const header = res.headers.get("retry-after");
+    expect(header).toBeTruthy();
+
+    const body = (await res.json()) as { ok: boolean; reason: string; retryAfterSeconds: number };
+    expect(body.retryAfterSeconds).toBe(Number(header));
+    expect(Number.isInteger(body.retryAfterSeconds)).toBe(true);
+    expect(body.retryAfterSeconds).toBe(46);
   });
 
   it("allows a call once the cooldown has elapsed", async () => {
@@ -101,6 +130,14 @@ describe("POST /api/refresh", () => {
     expect(res.headers.get("content-type")).toContain("application/json");
     expect(await res.json()).toMatchObject({ ok: false, reason: "no-token" });
   });
+
+  it("returns a JSON error body rather than a 500 when the store rejects mid-refresh", async () => {
+    const req = new Request("https://x/api/refresh?key=s3cret", { method: "POST" });
+    const res = await worker.fetch(req, testEnv({ STORE: kvThatFailsOn("health") }), ctx());
+    expect(res.status).not.toBe(500);
+    expect(res.headers.get("content-type")).toContain("application/json");
+    expect(await res.json()).toMatchObject({ ok: false });
+  });
 });
 
 describe("scheduled", () => {
@@ -116,5 +153,16 @@ describe("scheduled", () => {
     const controller = { cron: "0 */4 * * *", scheduledTime: Date.now(), noRetry: () => {} };
     await worker.scheduled(controller as unknown as ScheduledController, testEnv(), ctx());
     expect((await new KvStore(kv()).getHealth()).lastAttemptAt).not.toBeNull();
+  });
+
+  it("resolves rather than rejects when the store rejects mid-refresh (KV outage)", async () => {
+    const controller = { cron: "0 */4 * * *", scheduledTime: Date.now(), noRetry: () => {} };
+    await expect(
+      worker.scheduled(
+        controller as unknown as ScheduledController,
+        testEnv({ STORE: kvThatFailsOn("health") }),
+        ctx(),
+      ),
+    ).resolves.toBeUndefined();
   });
 });

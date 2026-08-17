@@ -11,7 +11,7 @@ import {
   StravaClient,
   StravaRateLimitError,
 } from "../infrastructure/strava/client";
-import type { Snapshot } from "../types";
+import { EMPTY_HEALTH, type Snapshot } from "../types";
 
 export interface RefreshDeps {
   store: KvStore;
@@ -26,19 +26,23 @@ export type RefreshResult =
 
 export async function runRefresh(deps: RefreshDeps, nowMs: number): Promise<RefreshResult> {
   const { store, strava, tz, privacyTrimM } = deps;
-  const health = await store.getHealth();
-  // Record the attempt immediately, before the token call — if the Worker dies
-  // mid-refresh, health still reflects that an attempt was made.
-  await store.putHealth({ ...health, lastAttemptAt: nowMs });
-
-  const currentToken = await store.getRefreshToken();
-  if (!currentToken) {
-    const message = "No Strava refresh token stored. Visit /auth/login to connect.";
-    await store.putHealth({ ...health, lastAttemptAt: nowMs, lastError: message, needsReauth: true });
-    return { ok: false, reason: "no-token", message };
-  }
+  // Captured outside the try so the catch block has something to merge onto
+  // even if the very first KV call (getHealth) is what failed.
+  let health = EMPTY_HEALTH;
 
   try {
+    health = await store.getHealth();
+    // Record the attempt immediately, before the token call — if the Worker dies
+    // mid-refresh, health still reflects that an attempt was made.
+    await store.putHealth({ ...health, lastAttemptAt: nowMs });
+
+    const currentToken = await store.getRefreshToken();
+    if (!currentToken) {
+      const message = "No Strava refresh token stored. Visit /auth/login to connect.";
+      await store.putHealth({ ...health, lastAttemptAt: nowMs, lastError: message, needsReauth: true });
+      return { ok: false, reason: "no-token", message };
+    }
+
     const token = await strava.refresh(currentToken);
 
     // Rotation is persisted before the access token is used for anything else.
@@ -103,12 +107,18 @@ export async function runRefresh(deps: RefreshDeps, nowMs: number): Promise<Refr
 
     // The snapshot is deliberately untouched here. A stale mood beats a blank
     // page: only `health` records that this attempt failed.
-    await store.putHealth({
-      ...health,
-      lastAttemptAt: nowMs,
-      lastError: message,
-      needsReauth: reason === "auth",
-    });
+    try {
+      await store.putHealth({
+        ...health,
+        lastAttemptAt: nowMs,
+        lastError: message,
+        needsReauth: reason === "auth",
+      });
+    } catch {
+      // Best-effort: if KV itself is what's failing, we cannot record the
+      // failure either. The caller still gets a returned result, never a
+      // thrown error — recording the failure must not become a new one.
+    }
 
     return { ok: false, reason, message };
   }

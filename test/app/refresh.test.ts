@@ -41,6 +41,23 @@ function deps(strava: StravaClient, privacyTrimM = 250) {
   return { store: new KvStore(kv()), strava, tz: "America/Los_Angeles", privacyTrimM };
 }
 
+/**
+ * A KV binding whose `get` rejects for a given key (default: every key) and
+ * whose `put`/`delete` succeed silently. Used to force a genuine KV outage
+ * rather than the "no token stored" happy-ish path, which every other test
+ * here already covers.
+ */
+function rejectingKv(failOn: (key: string) => boolean = () => true): KVNamespace {
+  return {
+    get: async (key: string) => {
+      if (failOn(key)) throw new Error("KV unavailable");
+      return null;
+    },
+    put: async () => {},
+    delete: async () => {},
+  } as unknown as KVNamespace;
+}
+
 async function seedSnapshot(): Promise<Snapshot> {
   const existing: Snapshot = {
     version: 1, refreshedAt: 1, mood: { id: "biscuits", name: "Biscuits", accent: "#D98B5F" },
@@ -255,5 +272,41 @@ describe("runRefresh", () => {
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.reason).toBe("error");
     expect((await new KvStore(kv()).getHealth()).lastError).toBe("boom");
+  });
+
+  it("returns ok:false instead of throwing when getHealth itself rejects (KV outage)", async () => {
+    const brokenStore = new KvStore(rejectingKv());
+    const result = await runRefresh(
+      { store: brokenStore, strava: happyClient(), tz: "America/Los_Angeles", privacyTrimM: 250 },
+      NOW,
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reason).toBe("error");
+      expect(result.message).toBe("KV unavailable");
+    }
+  });
+
+  it("does not throw even when the best-effort health write in the catch block also rejects", async () => {
+    // Every KV call fails: getHealth fails, and the catch block's own attempt
+    // to record that failure via putHealth would also fail if put() were not
+    // a no-op here. Simulate that too, to prove the failure-of-the-failure
+    // path is truly swallowed rather than merely untested.
+    const alwaysBroken: KVNamespace = {
+      get: async () => {
+        throw new Error("read down");
+      },
+      put: async () => {
+        throw new Error("write down");
+      },
+      delete: async () => {},
+    } as unknown as KVNamespace;
+
+    const result = await runRefresh(
+      { store: new KvStore(alwaysBroken), strava: happyClient(), tz: "America/Los_Angeles", privacyTrimM: 250 },
+      NOW,
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toBe("error");
   });
 });

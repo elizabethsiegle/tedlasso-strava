@@ -56,8 +56,16 @@ async function handleManualRefresh(request: Request, env: Env, nowMs: number): P
   // Recorded before running, so a slow or failing refresh still throttles the next call.
   await deps.store.putLastManualRefreshAt(nowMs);
 
-  const result = await runRefresh(deps, nowMs);
-  return json(result, result.ok ? 200 : 502);
+  try {
+    const result = await runRefresh(deps, nowMs);
+    return json(result, result.ok ? 200 : 502);
+  } catch (error) {
+    // runRefresh is written to never throw, but this is the boundary the
+    // caller sees: a KV blip here must still surface as the same JSON error
+    // shape, never a bare 500.
+    const message = error instanceof Error ? error.message : String(error);
+    return json({ ok: false, reason: "error", message }, 502);
+  }
 }
 
 export default {
@@ -81,6 +89,13 @@ export default {
   },
 
   async scheduled(_controller: ScheduledController, env: Env, _ctx: ExecutionContext): Promise<void> {
-    await runRefresh(buildDeps(env), Date.now());
+    // Backstop: runRefresh is written to never throw, but a cron handler that
+    // does throw fails invisibly (no one is watching), and buildDeps could
+    // throw in the future. Never let this rethrow.
+    try {
+      await runRefresh(buildDeps(env), Date.now());
+    } catch {
+      // deliberately ignored — see comment above
+    }
   },
 };
