@@ -51,19 +51,31 @@ export interface Env {
  * using the RAW string rather than the coerced number. `Number("")`,
  * `Number(" ")`, and `Number("\n")` are all `0`, which is indistinguishable
  * from the documented opt-out once coerced — so the raw string is checked
- * first. Only a trimmed value of exactly "0" is the opt-out; empty,
- * whitespace-only, or non-numeric values are misconfigurations and fall back
- * to the safe default rather than silently publishing an untrimmed route.
- * A negative number (e.g. "-1") is passed through unchanged so buildRoute's
- * own guard can throw on it — that is a genuinely invalid number, not a
- * missing/blank var, and this function's job is only to catch the latter.
+ * first, against the exact pattern `/^0$/`. Only a trimmed value of exactly
+ * "0" is the opt-out.
+ *
+ * Every other spelling that a numeric coercion would also read as zero —
+ * "0.0", "00", "-0", "+0", "0x0" — is treated as a misconfiguration, not an
+ * opt-out, even though `Number()` happily parses each of them to a finite
+ * zero. A config template or copy-paste is exactly the kind of thing that
+ * produces "0.0" instead of "0", and silently trimming nothing publishes the
+ * athlete's exact home coordinates — so anything that merely *looks* like
+ * zero falls back to the safe default rather than being trusted as intent.
+ * Only the documented literal earns the opt-out.
+ *
+ * A genuinely negative, non-zero number (e.g. "-1") is passed through
+ * unchanged so buildRoute's own guard can throw on it — that is an
+ * unambiguous mistake, and the loud failure is deliberate: the refresh
+ * should fail visibly rather than publish. This function's job is only to
+ * catch missing/blank/zero-like values, not to absorb negatives into the
+ * default.
  */
 export function resolvePrivacyTrim(raw: string | undefined): number {
   const trimmed = (raw ?? "").trim();
-  if (trimmed === "0") return 0;
-  if (trimmed === "") return TUNING.DEFAULT_PRIVACY_TRIM_M;
+  if (/^0$/.test(trimmed)) return 0;
   const n = Number(trimmed);
-  return Number.isFinite(n) ? n : TUNING.DEFAULT_PRIVACY_TRIM_M;
+  if (Number.isFinite(n) && n < 0) return n;
+  return Number.isFinite(n) && n > 0 ? n : TUNING.DEFAULT_PRIVACY_TRIM_M;
 }
 
 function buildDeps(env: Env): AuthDeps {

@@ -65,6 +65,23 @@ describe("resolvePrivacyTrim", () => {
     expect(resolvePrivacyTrim("0")).toBe(0);
   });
 
+  // "0.0", "00", "-0", "+0", and "0x0" all coerce to a finite zero via
+  // Number(), exactly like the documented opt-out "0" — but none of them is
+  // the literal the opt-out is documented as. A config template or a
+  // copy-paste typo could plausibly produce "0.0" instead of "0", and if that
+  // were silently accepted as the opt-out it would publish the athlete's
+  // exact, untrimmed home coordinates. Only the literal "0" may disable
+  // trimming; every alternate spelling of zero must fall back to the safe
+  // default instead. Do not "simplify" this back to a numeric comparison
+  // (e.g. `n === 0`) — that reintroduces the exact hole this guards against.
+  it("treats alternate spellings of zero as a misconfiguration, not the opt-out", () => {
+    expect(resolvePrivacyTrim("0.0")).toBe(TUNING.DEFAULT_PRIVACY_TRIM_M);
+    expect(resolvePrivacyTrim("00")).toBe(TUNING.DEFAULT_PRIVACY_TRIM_M);
+    expect(resolvePrivacyTrim("-0")).toBe(TUNING.DEFAULT_PRIVACY_TRIM_M);
+    expect(resolvePrivacyTrim("+0")).toBe(TUNING.DEFAULT_PRIVACY_TRIM_M);
+    expect(resolvePrivacyTrim("0x0")).toBe(TUNING.DEFAULT_PRIVACY_TRIM_M);
+  });
+
   it("parses an ordinary configured value", () => {
     expect(resolvePrivacyTrim("250")).toBe(250);
   });
