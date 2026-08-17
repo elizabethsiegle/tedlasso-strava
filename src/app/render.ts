@@ -252,6 +252,7 @@ export function renderPage(view: PageView): string {
     <span>${refreshButton}</span>
   </footer>
 </main>
+<aside class="colophon">made w/ &lt;3 in sf🌁 =&gt; see my prompts, tool calls, code on Entire: <a href="https://entire.io/gh/elizabethsiegle/tedlasso-strava" rel="noopener">https://entire.io/gh/elizabethsiegle/tedlasso-strava</a></aside>
 ${showRefreshButton ? `<script>${REFRESH_SCRIPT}</script>` : ""}
 </body>
 </html>`;

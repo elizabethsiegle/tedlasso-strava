@@ -274,6 +274,22 @@ describe("renderPage", () => {
     expect(html).toContain("35m");
   });
 
+  describe("colophon", () => {
+    it("pins the Entire credit line on every page, snapshot or not", () => {
+      for (const html of [renderPage(view()), renderPage(view({ snapshot: null }))]) {
+        expect(html).toContain('class="colophon"');
+        expect(html).toContain("made w/ &lt;3 in sf");
+        expect(html).toContain("https://entire.io/gh/elizabethsiegle/tedlasso-strava");
+      }
+    });
+
+    it("escapes the angle brackets in the credit copy rather than emitting markup", () => {
+      const html = renderPage(view());
+      expect(html).not.toContain("made w/ <3");
+      expect(html).toContain("=&gt;");
+    });
+  });
+
   describe("footer", () => {
     it("shows the refresh timestamp and the next scheduled cron run", () => {
       const html = renderPage(view());

@@ -175,4 +175,29 @@ body[data-refreshing="true"] .hero { opacity: .35; transition: opacity .35s ease
   color: var(--ink-soft);
   padding: 2.5rem .25rem;
 }
+
+/* The imprint line a printed programme carries at the foot of every sheet.
+   Heavy top rule to echo the masthead, set in the display face but left
+   lowercase — a hand-set credit, not another uppercase section label. Pinned
+   because it should survive the long scroll past the route and the stats. */
+.colophon {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 2;
+  background: var(--stock);
+  border-top: 3px solid var(--ink);
+  padding: .5rem 1.25rem;
+  text-align: center;
+  font-family: var(--display);
+  font-size: .68rem; letter-spacing: .06em;
+  color: var(--ink-soft);
+}
+.colophon a {
+  color: var(--ink-accent);
+  text-underline-offset: .18em;
+  /* The URL is longer than a phone is wide; break it rather than let it push
+     the pinned bar into a horizontal scroll. */
+  word-break: break-all;
+}
+/* Keep the sheet's last line clear of the pinned imprint, which wraps to two
+   lines on narrow screens. */
+body { padding-bottom: 4rem; }
 `;
