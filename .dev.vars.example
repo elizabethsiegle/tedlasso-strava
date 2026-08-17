@@ -1,0 +1,5 @@
+# Copy to .dev.vars for local development. .dev.vars is gitignored.
+STRAVA_CLIENT_ID=00000
+STRAVA_CLIENT_SECRET=replace-me
+STRAVA_ATHLETE_ID=00000000
+SETUP_KEY=pick-a-long-random-string

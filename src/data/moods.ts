@@ -51,7 +51,7 @@ export const MOODS: Mood[] = [
     gifs: [
       {
         url: "https://media.giphy.com/media/RzE8jPRlLeEyEB6Dmf/giphy.gif",
-        alt: "Ted Lasso's official GIF captures a nervous, anxious moment.",
+        alt: "Ted Lasso looks nervous and anxious in this animated clip.",
         source: "Giphy",
         verifiedOn: "2026-08-16",
       },
@@ -94,7 +94,7 @@ export const MOODS: Mood[] = [
     gifs: [
       {
         url: "https://media.giphy.com/media/5B925WaCAIWojy3KMG/giphy.gif",
-        alt: "Apple TV+'s official GIF shows Ted Lasso's believe message.",
+        alt: "Ted Lasso's animated GIF conveys a hopeful believe message.",
         source: "Giphy",
         verifiedOn: "2026-08-16",
       },
@@ -116,13 +116,13 @@ export const MOODS: Mood[] = [
     gifs: [
       {
         url: "https://media.giphy.com/media/5erpxvvqEBWBeFhrHa/giphy.gif",
-        alt: "Roy Kent reacts to something with an exasperated fucking hell.",
+        alt: "Roy Kent's face flashes with sudden, exasperated frustration.",
         source: "Giphy",
         verifiedOn: "2026-08-16",
       },
       {
         url: "https://media.giphy.com/media/Zod24bq6PTegwxMAcK/giphy.gif",
-        alt: "Roy Kent tells someone off with a sharp fuck off.",
+        alt: "Roy Kent scowls and turns away in blunt irritation.",
         source: "Giphy",
         verifiedOn: "2026-08-16",
       },
@@ -148,7 +148,7 @@ export const MOODS: Mood[] = [
     gifs: [
       {
         url: "https://media.giphy.com/media/oxQDaZaJUMNwxbPUx5/giphy.gif",
-        alt: "StickerGiant's goldfish GIF illustrates forgetting and moving on quickly.",
+        alt: "An animated goldfish illustrates forgetting and moving on quickly.",
         source: "Giphy",
         verifiedOn: "2026-08-16",
       },
@@ -170,7 +170,7 @@ export const MOODS: Mood[] = [
     gifs: [
       {
         url: "https://media.giphy.com/media/yPK2Mo5zXUF8NsE8gE/giphy.gif",
-        alt: "The Diamond Dogs rally together and shout let's ride.",
+        alt: "The Diamond Dogs gather together in a moment of camaraderie.",
         source: "Giphy",
         verifiedOn: "2026-08-16",
       },
@@ -198,7 +198,7 @@ export const MOODS: Mood[] = [
     gifs: [
       {
         url: "https://media.giphy.com/media/UL3kNMFvmKGXlOD8Qu/giphy.gif",
-        alt: "A sticker declares that football is life, Dani Rojas style.",
+        alt: "Dani Rojas cheerfully declares that football is life.",
         source: "Giphy",
         verifiedOn: "2026-08-16",
       },
