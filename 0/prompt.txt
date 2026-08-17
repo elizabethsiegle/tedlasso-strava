@@ -1,0 +1,2 @@
+use superpowers to help build this project: 
+a website deployed on Cloudflare Workers that hits the Strava API every 3-5 hours (whatever the Strava API allows) to display a Ted Lasso quote and gif on the website according to my mood (my mood is based on my last workout, how often I worked out, and any other data that could be gleaned from the Strava info)
