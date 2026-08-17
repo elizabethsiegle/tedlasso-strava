@@ -50,6 +50,9 @@ export const TUNING = {
   MANUAL_REFRESH_COOLDOWN_MS: 60_000,
   OAUTH_STATE_TTL_S: 600,
   REFRESH_ANIMATION_MS: 1200,
+  // Matches the `triggers.crons` schedule in wrangler.jsonc (`0 */4 * * *`).
+  // Used by the footer's "next scheduled run" display.
+  CRON_INTERVAL_MS: 4 * 60 * 60 * 1000,
 } as const;
 
 export const DAY_MS = 86_400_000;

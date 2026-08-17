@@ -6,8 +6,6 @@ import type { Health, Snapshot } from "../types";
 import { REFRESH_SCRIPT } from "./client";
 import { STYLES } from "./styles";
 
-const FOUR_HOURS_MS = 4 * 3_600_000;
-
 /** `YYYY-MM-DD HH:MM UTC` -- plain and unambiguous, no locale guessing. */
 function formatUtc(ms: number): string {
   const d = new Date(ms);
@@ -16,12 +14,14 @@ function formatUtc(ms: number): string {
 }
 
 /**
- * The cron (see wrangler.jsonc) fires every 4th UTC hour, on the hour.
- * 1970-01-01 is itself a 4-hour boundary, so integer division by the period
- * lines up with UTC hours directly; no calendar math needed.
+ * The cron (see wrangler.jsonc, TUNING.CRON_INTERVAL_MS) fires every 4th UTC
+ * hour, on the hour. 1970-01-01 is itself a 4-hour boundary, so integer
+ * division by the period lines up with UTC hours directly; no calendar math
+ * needed.
  */
 function nextScheduledRunMs(nowMs: number): number {
-  return (Math.floor(nowMs / FOUR_HOURS_MS) + 1) * FOUR_HOURS_MS;
+  const interval = TUNING.CRON_INTERVAL_MS;
+  return (Math.floor(nowMs / interval) + 1) * interval;
 }
 
 /** A GIF whose catalogue entry hasn't been re-checked in STALE_VERIFIED_DAYS. */
