@@ -1,8 +1,33 @@
 import type { RouteRender } from "../domain/route";
-import { TUNING } from "../domain/tuning";
+import { DAY_MS, TUNING } from "../domain/tuning";
 import type { Health, Snapshot } from "../types";
 import { REFRESH_SCRIPT } from "./client";
 import { STYLES } from "./styles";
+
+const FOUR_HOURS_MS = 4 * 3_600_000;
+
+/** `YYYY-MM-DD HH:MM UTC` -- plain and unambiguous, no locale guessing. */
+function formatUtc(ms: number): string {
+  const d = new Date(ms);
+  const pad = (n: number): string => String(n).padStart(2, "0");
+  return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())} UTC`;
+}
+
+/**
+ * The cron (see wrangler.jsonc) fires every 4th UTC hour, on the hour.
+ * 1970-01-01 is itself a 4-hour boundary, so integer division by the period
+ * lines up with UTC hours directly; no calendar math needed.
+ */
+function nextScheduledRunMs(nowMs: number): number {
+  return (Math.floor(nowMs / FOUR_HOURS_MS) + 1) * FOUR_HOURS_MS;
+}
+
+/** A GIF whose catalogue entry hasn't been re-checked in STALE_VERIFIED_DAYS. */
+function isGifStale(verifiedOn: string, nowMs: number): boolean {
+  const verifiedMs = Date.parse(verifiedOn);
+  if (!Number.isFinite(verifiedMs)) return false;
+  return (nowMs - verifiedMs) / DAY_MS > TUNING.STALE_VERIFIED_DAYS;
+}
 
 export interface PageView {
   snapshot: Snapshot | null;
@@ -173,6 +198,18 @@ export function renderPage(view: PageView): string {
        </form>`
     : "";
 
+  const refreshedLabel = snapshot
+    ? `Refreshed ${formatUtc(snapshot.refreshedAt)}`
+    : "Not yet refreshed";
+  const nextRunLabel = `Next run ${formatUtc(nextScheduledRunMs(nowMs))}`;
+  const staleGifLabel =
+    snapshot?.gif && isGifStale(snapshot.gif.verifiedOn, nowMs)
+      ? `<span class="stale-marker">GIF unverified 180+ days</span>`
+      : "";
+  const footerMeta = [refreshedLabel, nextRunLabel, staleGifLabel]
+    .filter((part) => part.length > 0)
+    .join(" · ");
+
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -206,6 +243,7 @@ export function renderPage(view: PageView): string {
 
   <footer class="footer">
     <span><a href="https://www.strava.com" rel="noopener">Powered by Strava</a></span>
+    <span class="footer-meta">${footerMeta}</span>
     <span>${refreshButton}</span>
   </footer>
 </main>

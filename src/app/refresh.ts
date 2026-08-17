@@ -73,7 +73,7 @@ export async function runRefresh(deps: RefreshDeps, nowMs: number): Promise<Refr
       refreshedAt: nowMs,
       mood: { id: mood.id, name: mood.name, accent: mood.accent },
       quote,
-      gif: gif ? { url: gif.url, alt: gif.alt } : null,
+      gif: gif ? { url: gif.url, alt: gif.alt, verifiedOn: gif.verifiedOn } : null,
       scores,
       reasons: selection.reasons,
       facts: {

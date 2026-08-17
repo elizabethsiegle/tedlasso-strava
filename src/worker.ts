@@ -161,7 +161,7 @@ export default {
           ...base,
           mood: { id: previewMood.id, name: previewMood.name, accent: previewMood.accent },
           quote,
-          gif: gif ? { url: gif.url, alt: gif.alt } : null,
+          gif: gif ? { url: gif.url, alt: gif.alt, verifiedOn: gif.verifiedOn } : null,
         };
         previewNotice = `Preview — not your live mood.`;
       }

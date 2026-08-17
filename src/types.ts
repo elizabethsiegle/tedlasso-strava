@@ -15,7 +15,10 @@ export interface Snapshot {
   refreshedAt: number;
   mood: { id: string; name: string; accent: string };
   quote: { text: string; character: string };
-  gif: { url: string; alt: string } | null;
+  // `verifiedOn` rides along from the catalogue entry (src/data/moods.ts) so
+  // the footer can flag a stale GIF link without re-looking up the catalogue
+  // at render time.
+  gif: { url: string; alt: string; verifiedOn: string } | null;
   scores: { consistency: number; charge: number };
   reasons: string[];
   facts: PublicFacts;

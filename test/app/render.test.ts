@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { escapeHtml, renderPage } from "../../src/app/render";
+import { DAY_MS, TUNING } from "../../src/domain/tuning";
 import { EMPTY_HEALTH, type Health, type Snapshot } from "../../src/types";
 
 const NOW = Date.parse("2026-08-14T19:00:00Z");
@@ -10,7 +11,11 @@ function snapshot(overrides: Partial<Snapshot> = {}): Snapshot {
     refreshedAt: NOW - 3_600_000,
     mood: { id: "believe", name: "Believe", accent: "#F2C14E" },
     quote: { text: "Believe.", character: "AFC Richmond locker room" },
-    gif: { url: "https://example.test/believe.gif", alt: "The Believe sign above the office door." },
+    gif: {
+      url: "https://example.test/believe.gif",
+      alt: "The Believe sign above the office door.",
+      verifiedOn: "2026-08-14",
+    },
     scores: { consistency: 72, charge: 64 },
     reasons: ["Your longest run in 90 days, and it was today"],
     facts: {
@@ -267,5 +272,56 @@ describe("renderPage", () => {
     s.facts.last!.movingTimeS = 35 * 60;
     const html = renderPage(view({ snapshot: s }));
     expect(html).toContain("35m");
+  });
+
+  describe("footer", () => {
+    it("shows the refresh timestamp and the next scheduled cron run", () => {
+      const html = renderPage(view());
+      // NOW is 2026-08-14T19:00:00Z; the snapshot was refreshed an hour
+      // earlier (18:00), and the next 4-hourly boundary after 19:00 is 20:00.
+      expect(html).toContain("Refreshed 2026-08-14 18:00 UTC");
+      expect(html).toContain("Next run 2026-08-14 20:00 UTC");
+    });
+
+    it("shows the next scheduled run even before the first snapshot exists", () => {
+      const html = renderPage(view({ snapshot: null }));
+      expect(html).toContain("Next run 2026-08-14 20:00 UTC");
+      expect(html).toContain("Not yet refreshed");
+    });
+
+    it("shows no staleness marker for a freshly verified GIF", () => {
+      const html = renderPage(view());
+      expect(html).not.toContain("stale-marker");
+      expect(html).not.toContain("unverified");
+    });
+
+    it("shows a staleness marker for a GIF verified 200 days ago", () => {
+      const verifiedOn = new Date(NOW - 200 * DAY_MS).toISOString().slice(0, 10);
+      const s = snapshot({ gif: { url: "https://example.test/old.gif", alt: "An old GIF.", verifiedOn } });
+      const html = renderPage(view({ snapshot: s }));
+      expect(html).toContain("stale-marker");
+      expect(html).toContain(`${TUNING.STALE_VERIFIED_DAYS}+`);
+    });
+
+    it("does not show a staleness marker at exactly the threshold", () => {
+      // Full ISO (with time-of-day), not a date-only string, so the diff
+      // against NOW is exactly STALE_VERIFIED_DAYS*DAY_MS -- a date-only
+      // string would truncate to midnight and drift past the boundary.
+      const verifiedOn = new Date(NOW - TUNING.STALE_VERIFIED_DAYS * DAY_MS).toISOString();
+      const s = snapshot({ gif: { url: "https://example.test/edge.gif", alt: "An edge-case GIF.", verifiedOn } });
+      const html = renderPage(view({ snapshot: s }));
+      expect(html).not.toContain("stale-marker");
+    });
+
+    it("does not blow up when there is no gif at all", () => {
+      const html = renderPage(view({ snapshot: snapshot({ gif: null }) }));
+      expect(html).not.toContain("stale-marker");
+    });
+
+    it("treats an unparseable verifiedOn as not-stale rather than throwing", () => {
+      const s = snapshot({ gif: { url: "https://example.test/bad.gif", alt: "A GIF.", verifiedOn: "not-a-date" } });
+      expect(() => renderPage(view({ snapshot: s }))).not.toThrow();
+      expect(renderPage(view({ snapshot: s }))).not.toContain("stale-marker");
+    });
   });
 });

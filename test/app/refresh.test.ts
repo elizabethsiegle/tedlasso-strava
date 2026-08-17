@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers";
 import { beforeEach, describe, expect, it } from "vitest";
 import { runRefresh } from "../../src/app/refresh";
+import { getMood } from "../../src/data/moods";
 import { KvStore } from "../../src/infrastructure/store/kv";
 import { StravaClient } from "../../src/infrastructure/strava/client";
 import type { Snapshot } from "../../src/types";
@@ -212,6 +213,18 @@ describe("runRefresh", () => {
     const snap = await new KvStore(kv()).getSnapshot();
     expect(snap!.mood.id).toBe("preseason");
     expect(snap!.route).toBeNull();
+  });
+
+  it("carries the chosen GIF's verifiedOn from the catalogue into the snapshot", async () => {
+    await new KvStore(kv()).putRefreshToken("ref-old");
+    // Zero activities deterministically selects "preseason", which the
+    // catalogue ships with exactly one GIF -- no seed-dependent branching to
+    // account for.
+    await runRefresh(deps(happyClient([])), NOW);
+    const snap = await new KvStore(kv()).getSnapshot();
+    const catalogueGif = getMood("preseason")!.gifs[0]!;
+    expect(snap!.gif).not.toBeNull();
+    expect(snap!.gif!.verifiedOn).toBe(catalogueGif.verifiedOn);
   });
 
   it("classifies a non-Strava failure as \"error\" without touching the snapshot or needsReauth", async () => {
