@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
-import { renderPage } from "../../src/app/render";
+import { escapeHtml, renderPage } from "../../src/app/render";
 import worker from "../../src/worker";
 import { MOODS } from "../../src/data/moods";
 import { EMPTY_HEALTH, type Snapshot } from "../../src/types";
@@ -124,7 +124,13 @@ describe("every mood renders", () => {
       s.quote = mood.quotes[0]!;
       const html = renderPage(view(s));
 
-      expect(html).toContain(mood.name);
+      // The raw markup legitimately escapes apostrophes (e.g. "Where'd You
+      // Go" is emitted as "Where&#39;d You Go") — a browser renders that
+      // identically to the un-escaped form, so asserting a literal substring
+      // of the catalogue name against pre-parse markup is the wrong check.
+      // Assert against what the renderer actually emits instead; this still
+      // fails if a mood's name were rendered wrongly or omitted.
+      expect(html).toContain(escapeHtml(mood.name));
       expect(html).toContain(`--ink-accent: ${mood.accent}`);
       expect(html).toContain(mood.quotes[0]!.character);
       expect(html).toContain("Powered by Strava");

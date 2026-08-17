@@ -20,18 +20,6 @@ export function escapeHtml(value: string): string {
     .replace(/'/g, "&#39;");
 }
 
-/**
- * A lighter escape for plain text nodes (never attribute values), where only
- * `&`/`<`/`>` are structurally dangerous. Mood names are trusted, versioned
- * catalogue data (never Strava- or user-influenced) — quote-escaping them
- * only mangles apostrophes like "Where'd You Go" for no security benefit.
- * Anything Strava- or user-influenced (locationLabel, quote text) still goes
- * through the stricter `escapeHtml`.
- */
-function escapeText(value: string): string {
-  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
-
 function km(metres: number): string {
   return (metres / 1000).toFixed(1);
 }
@@ -75,8 +63,9 @@ export function renderRoute(route: RouteRender | null, snapshot: Snapshot): stri
   if (!route) {
     const sport = snapshot.facts.last?.sportType ?? "Session";
     const time = snapshot.facts.last ? duration(snapshot.facts.last.movingTimeS) : "";
+    const label = time ? `${sport} ${time}` : sport;
     return `<section class="route"><div class="route-frame">
-      <p class="route-none">No route — ${escapeHtml(sport)} ${escapeHtml(time)}</p>
+      <p class="route-none">No route — ${escapeHtml(label)}</p>
     </div></section>`;
   }
 
@@ -163,14 +152,14 @@ export function renderPage(view: PageView): string {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${escapeText(mood.name)} — tedlasso-strava</title>
+<title>${escapeHtml(mood.name)} — tedlasso-strava</title>
 <meta name="robots" content="noindex">
 <style>${STYLES}</style>
 </head>
 <body style="--ink-accent: ${escapeHtml(mood.accent)}">
 <main class="sheet">
   <header class="masthead">
-    <h1 class="mood-name">${escapeText(mood.name)}</h1>
+    <h1 class="mood-name">${escapeHtml(mood.name)}</h1>
     <div class="masthead-meta">Matchday report ${staleStamp}</div>
   </header>
 
