@@ -58,12 +58,24 @@ describe("mood catalogue", () => {
     expect(getMood("nope")).toBeUndefined();
   });
 
-  // Temporary assertion: GIF sourcing is a separate follow-up pass (see
-  // src/data/moods.ts), so every mood currently ships with an empty `gifs`
-  // array. This makes that gap a deliberate, visible fact in the suite
-  // rather than something the vacuously-passing loops above would hide.
-  // The GIF-sourcing pass should invert this test once it populates arrays.
-  it("has zero verified GIFs per mood for now, pending the GIF-sourcing follow-up", () => {
-    for (const m of MOODS) expect(m.gifs.length).toBe(0);
+  // GIF sourcing pass: 6 of the 10 moods (preseason, believe, roy-kent,
+  // comeback-szn, diamond-dogs, football-is-life) now carry one or more
+  // hand-verified GIF URLs. The remaining 4 (whered-you-go, gaffer-mode,
+  // hopeful, biscuits) legitimately ship with an empty `gifs` array — no
+  // candidate found during the sourcing pass returned a verified 2xx
+  // image response, and an honest empty state (the page's designed
+  // no-GIF hero layout) is preferred over a fabricated or unverified URL.
+  it("gives every populated mood well-formed GIF entries, and allows some moods to have none", () => {
+    const withGifs = MOODS.filter((m) => m.gifs.length > 0);
+    expect(withGifs.length).toBeGreaterThan(0);
+    expect(withGifs.length).toBeLessThan(MOODS.length);
+    for (const m of MOODS) {
+      for (const g of m.gifs) {
+        expect(g.url.startsWith("https://")).toBe(true);
+        expect(g.alt.trim().split(/\s+/).length).toBeGreaterThanOrEqual(4);
+        expect(g.source.trim().length).toBeGreaterThan(0);
+        expect(g.verifiedOn).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      }
+    }
   });
 });

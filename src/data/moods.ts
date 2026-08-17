@@ -48,9 +48,14 @@ export const MOODS: Mood[] = [
       },
       { text: "There's two buttons I never like to hit: panic and snooze.", character: "Ted Lasso" },
     ],
-    // GIFs are sourced and verified in a separate follow-up pass. See
-    // test/data/moods.test.ts for the temporary zero-GIF assertion.
-    gifs: [],
+    gifs: [
+      {
+        url: "https://media.giphy.com/media/RzE8jPRlLeEyEB6Dmf/giphy.gif",
+        alt: "Ted Lasso's official GIF captures a nervous, anxious moment.",
+        source: "Giphy",
+        verifiedOn: "2026-08-16",
+      },
+    ],
   },
   {
     id: "whered-you-go",
@@ -86,7 +91,14 @@ export const MOODS: Mood[] = [
       },
       { text: "Doing the right thing is never the wrong thing.", character: "Ted Lasso" },
     ],
-    gifs: [],
+    gifs: [
+      {
+        url: "https://media.giphy.com/media/5B925WaCAIWojy3KMG/giphy.gif",
+        alt: "Apple TV+'s official GIF shows Ted Lasso's believe message.",
+        source: "Giphy",
+        verifiedOn: "2026-08-16",
+      },
+    ],
   },
   {
     id: "roy-kent",
@@ -101,7 +113,20 @@ export const MOODS: Mood[] = [
       { text: "I don't want to be lucky. I want to be good.", character: "Roy Kent" },
       { text: "Be curious, not judgmental.", character: "Ted Lasso" },
     ],
-    gifs: [],
+    gifs: [
+      {
+        url: "https://media.giphy.com/media/5erpxvvqEBWBeFhrHa/giphy.gif",
+        alt: "Roy Kent reacts to something with an exasperated fucking hell.",
+        source: "Giphy",
+        verifiedOn: "2026-08-16",
+      },
+      {
+        url: "https://media.giphy.com/media/Zod24bq6PTegwxMAcK/giphy.gif",
+        alt: "Roy Kent tells someone off with a sharp fuck off.",
+        source: "Giphy",
+        verifiedOn: "2026-08-16",
+      },
+    ],
   },
   {
     id: "comeback-szn",
@@ -120,7 +145,14 @@ export const MOODS: Mood[] = [
         character: "Leslie Higgins",
       },
     ],
-    gifs: [],
+    gifs: [
+      {
+        url: "https://media.giphy.com/media/oxQDaZaJUMNwxbPUx5/giphy.gif",
+        alt: "StickerGiant's goldfish GIF illustrates forgetting and moving on quickly.",
+        source: "Giphy",
+        verifiedOn: "2026-08-16",
+      },
+    ],
   },
   {
     id: "diamond-dogs",
@@ -135,7 +167,14 @@ export const MOODS: Mood[] = [
         character: "Ted Lasso",
       },
     ],
-    gifs: [],
+    gifs: [
+      {
+        url: "https://media.giphy.com/media/yPK2Mo5zXUF8NsE8gE/giphy.gif",
+        alt: "The Diamond Dogs rally together and shout let's ride.",
+        source: "Giphy",
+        verifiedOn: "2026-08-16",
+      },
+    ],
   },
   {
     id: "football-is-life",
@@ -156,7 +195,14 @@ export const MOODS: Mood[] = [
         character: "Trent Crimm",
       },
     ],
-    gifs: [],
+    gifs: [
+      {
+        url: "https://media.giphy.com/media/UL3kNMFvmKGXlOD8Qu/giphy.gif",
+        alt: "A sticker declares that football is life, Dani Rojas style.",
+        source: "Giphy",
+        verifiedOn: "2026-08-16",
+      },
+    ],
   },
   {
     id: "gaffer-mode",
