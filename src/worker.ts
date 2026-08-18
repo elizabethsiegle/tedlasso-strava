@@ -1,4 +1,5 @@
 import { handleCallback, handleLogin, hasSetupKey, type AuthDeps } from "./app/auth";
+import { renderCatalogue } from "./app/catalogue";
 import { renderPage } from "./app/render";
 import { runRefresh } from "./app/refresh";
 import { getMood, type Mood } from "./data/moods";
@@ -166,6 +167,14 @@ export default {
     if (url.pathname === "/auth/login") return handleLogin(request, buildDeps(env));
     if (url.pathname === "/auth/callback") return handleCallback(request, buildDeps(env), nowMs);
     if (url.pathname === "/api/refresh") return handleManualRefresh(request, env, nowMs);
+
+    // Derived entirely from bundled data — no KV read, no Strava call — so the
+    // catalogue stays readable even when there is no snapshot yet.
+    if (url.pathname === "/catalogue") {
+      return new Response(renderCatalogue(nowMs), {
+        headers: { "content-type": "text/html; charset=utf-8" },
+      });
+    }
 
     if (url.pathname === "/") {
       const store = new KvStore(env.STORE);

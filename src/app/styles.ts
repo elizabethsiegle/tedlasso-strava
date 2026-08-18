@@ -202,6 +202,18 @@ body[data-refreshing="true"] .hero { opacity: .35; transition: opacity .35s ease
   white-space: nowrap;
 }
 .results-num { text-align: right; padding-left: .75rem; white-space: nowrap; }
+/* The route as a margin glyph — a shape at a glance, not a map. Sized in the
+   row's own terms so it never becomes the loudest thing in the table. The
+   square 1000-unit viewBox is letterboxed into this strip by the default
+   preserveAspectRatio, which is why the path's stroke-width is set far heavier
+   than the full map's: at this scale a hairline would vanish. */
+.results-glyph { width: 3.25rem; padding-left: .75rem; line-height: 0; }
+.results-trace {
+  display: block; width: 3.25rem; height: 1.5rem;
+  color: var(--ink-accent);
+  overflow: visible;
+}
+.results-indoor { color: var(--ink-soft); font-family: var(--display); font-size: .72rem; }
 /* The link is a mark in the margin, not a button: the row is the content and
    the arrow just says there is somewhere to go. */
 .results-out { text-align: right; padding-left: .9rem; width: 1.5rem; }
@@ -211,6 +223,39 @@ body[data-refreshing="true"] .hero { opacity: .35; transition: opacity .35s ease
   font-size: .9rem;
 }
 .results-out a:hover, .results-out a:focus-visible { text-decoration: underline; }
+
+/* Catalogue sheet. Each mood re-declares --ink-accent locally, so its own ink
+   colours its heading and its links without any per-mood CSS being generated. */
+.cat-intro { color: var(--ink-soft); max-width: 42rem; margin: 1.25rem 0 2rem; }
+.cat-mood { margin-top: 2.25rem; }
+.cat-name {
+  font-family: var(--display); font-weight: 800;
+  font-size: clamp(1.25rem, 4vw, 1.9rem);
+  letter-spacing: -.03em; text-transform: uppercase;
+  color: var(--ink-accent);
+  margin: 0;
+  border-bottom: 3px solid var(--ink-accent);
+  padding-bottom: .2rem;
+}
+.cat-meta {
+  display: flex; gap: 1.1rem; flex-wrap: wrap;
+  margin: .45rem 0 .8rem;
+  font-family: var(--display);
+  font-size: .68rem; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.cat-meta a { color: var(--ink-accent); }
+.cat-table { width: 100%; border-collapse: collapse; }
+.cat-table td { padding: .4rem 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+/* The quotes are the product; they get the text face at reading size while the
+   metadata beside them stays in the small display face. */
+.cat-quote { font-family: var(--text); padding-right: 1rem; }
+.cat-alt { color: var(--ink-soft); padding-right: 1rem; }
+.cat-who, .cat-when {
+  font-family: var(--display); font-size: .68rem; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--ink-soft); white-space: nowrap;
+}
+.cat-gifs { margin-top: .9rem; }
 
 /* The imprint line a printed programme carries at the foot of every sheet.
    Heavy top rule to echo the masthead, set in the display face but left
