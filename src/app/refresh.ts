@@ -77,6 +77,17 @@ export async function runRefresh(deps: RefreshDeps, nowMs: number): Promise<Refr
     // and take the most recent one.
     const lastActivity = [...activities].sort((a, b) => b.startedAt - a.startedAt)[0];
 
+    // Same reason as above, for the results table's row thumbnails: the glyph
+    // needs the polyline, which only the raw Activity carries. Trimming happens
+    // here in the write path, so the snapshot stores finished path data and
+    // never a coordinate. An activity with no GPS trace simply has no glyph.
+    const byId = new Map(activities.map((a) => [a.id, a]));
+    const recent = facts.recent.map((row) => {
+      const source = byId.get(row.id);
+      const route = source ? buildRoute(source, privacyTrimM) : null;
+      return route ? { ...row, glyph: { pathD: route.pathD, viewBox: route.viewBox } } : row;
+    });
+
     const snapshot: Snapshot = {
       version: 1,
       refreshedAt: nowMs,
@@ -92,7 +103,7 @@ export async function runRefresh(deps: RefreshDeps, nowMs: number): Promise<Refr
         baselineWeekly: facts.baselineWeekly,
         streakDays: facts.streakDays,
         totalActivities: facts.totalActivities,
-        recent: facts.recent,
+        recent,
       },
       route: lastActivity ? buildRoute(lastActivity, privacyTrimM) : null,
     };

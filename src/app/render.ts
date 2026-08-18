@@ -25,7 +25,7 @@ function nextScheduledRunMs(nowMs: number): number {
 }
 
 /** A GIF whose catalogue entry hasn't been re-checked in STALE_VERIFIED_DAYS. */
-function isGifStale(verifiedOn: string, nowMs: number): boolean {
+export function isGifStale(verifiedOn: string, nowMs: number): boolean {
   const verifiedMs = Date.parse(verifiedOn);
   if (!Number.isFinite(verifiedMs)) return false;
   return (nowMs - verifiedMs) / DAY_MS > TUNING.STALE_VERIFIED_DAYS;
@@ -99,9 +99,15 @@ function results(snapshot: Snapshot): string {
       const sport = escapeHtml(a.sportType);
       const when = escapeHtml(resultDate(a.day));
       const href = `https://www.strava.com/activities/${encodeURIComponent(String(a.id))}`;
+      // An indoor session has no trace to draw. A dash says so plainly rather
+      // than leaving a hole in the column.
+      const glyph = a.glyph
+        ? `<svg class="results-trace" viewBox="${escapeHtml(a.glyph.viewBox)}" role="presentation" focusable="false"><path d="${escapeHtml(a.glyph.pathD)}" fill="none" stroke="currentColor" stroke-width="90" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+        : `<span class="results-indoor" title="No GPS trace">&mdash;</span>`;
       return `<tr>
         <td class="results-day">${when}</td>
         <td>${sport}</td>
+        <td class="results-glyph">${glyph}</td>
         <td class="results-num">${km(a.distanceM)} km</td>
         <td class="results-num">${duration(a.movingTimeS)}</td>
         <td class="results-out"><a href="${href}" rel="noopener" aria-label="View this ${sport} on Strava">&#8599;</a></td>
@@ -297,7 +303,7 @@ export function renderPage(view: PageView): string {
   ${snapshot ? results(snapshot) : ""}
 
   <footer class="footer">
-    <span><a href="https://www.strava.com" rel="noopener">Powered by Strava</a></span>
+    <span><a href="https://www.strava.com" rel="noopener">Powered by Strava</a> · <a href="/catalogue">Quote &amp; GIF catalogue</a></span>
     <span class="footer-meta">${footerMeta}</span>
     <span>${refreshButton}</span>
   </footer>

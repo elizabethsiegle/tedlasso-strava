@@ -234,6 +234,29 @@ describe("runRefresh", () => {
     expect((await new KvStore(kv()).getSnapshot())!.route).toBeNull();
   });
 
+  it("builds a privacy-trimmed glyph for each results row from the same polyline", async () => {
+    await new KvStore(kv()).putRefreshToken("ref-old");
+    await runRefresh(deps(happyClient(), 0), NOW);
+    const snap = await new KvStore(kv()).getSnapshot();
+
+    const withGlyph = (snap!.facts.recent ?? []).filter((r) => r.glyph);
+    expect(withGlyph.length).toBeGreaterThan(0);
+    for (const row of withGlyph) {
+      expect(row.glyph!.pathD.startsWith("M")).toBe(true);
+      expect(row.glyph!.viewBox).toMatch(/^0 0 \d+ \d+$/);
+    }
+  });
+
+  it("omits the row glyph rather than the row when the trim consumes the route", async () => {
+    await new KvStore(kv()).putRefreshToken("ref-old");
+    await runRefresh(deps(happyClient(), 250), NOW);
+    const snap = await new KvStore(kv()).getSnapshot();
+
+    // Same trim that nulls `route` above: the rows survive, only the traces go.
+    expect((snap!.facts.recent ?? []).length).toBeGreaterThan(0);
+    expect((snap!.facts.recent ?? []).every((r) => r.glyph === undefined)).toBe(true);
+  });
+
   it("never persists raw coordinates alongside the path", async () => {
     await new KvStore(kv()).putRefreshToken("ref-old");
     // Trim 0 so a route IS built — asserting absence while a route exists is the

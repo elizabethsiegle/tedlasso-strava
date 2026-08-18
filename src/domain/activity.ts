@@ -35,6 +35,13 @@ export interface RecentActivity {
   distanceM: number;
   movingTimeS: number;
   day: string; // YYYY-MM-DD, athlete-local
+  /**
+   * Finished SVG path for the row's route thumbnail, privacy-trimmed by the
+   * same `buildRoute` the full map uses, and — like it — computed in the write
+   * path so no raw coordinate is ever persisted. Absent for an activity with
+   * no GPS trace (treadmill, trainer) or one trimmed away to nothing.
+   */
+  glyph?: { pathD: string; viewBox: string };
 }
 
 export interface Facts {

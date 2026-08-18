@@ -304,6 +304,38 @@ describe("renderPage", () => {
       expect(html).toContain('aria-label="View this Ride on Strava"');
     });
 
+    it("draws a trace for a row with a glyph and a dash for one without", () => {
+      const mixed = snapshot({
+        facts: {
+          ...snapshot().facts,
+          recent: [
+            {
+              id: 1, sportType: "Ride", distanceM: 1000, movingTimeS: 600, day: "2026-08-13",
+              glyph: { pathD: "M0 0 L10 10", viewBox: "0 0 1000 1000" },
+            },
+            { id: 2, sportType: "Workout", distanceM: 0, movingTimeS: 1800, day: "2026-08-12" },
+          ],
+        },
+      });
+      const html = renderPage(view({ snapshot: mixed }));
+      expect(html).toContain('class="results-trace"');
+      expect(html).toContain("M0 0 L10 10");
+      expect(html).toContain('class="results-indoor"');
+    });
+
+    it("marks the trace as presentational so it is not announced twice", () => {
+      const withGlyph = snapshot({
+        facts: {
+          ...snapshot().facts,
+          recent: [{
+            id: 1, sportType: "Ride", distanceM: 1000, movingTimeS: 600, day: "2026-08-13",
+            glyph: { pathD: "M0 0 L10 10", viewBox: "0 0 1000 1000" },
+          }],
+        },
+      });
+      expect(renderPage(view({ snapshot: withGlyph }))).toContain('role="presentation"');
+    });
+
     it("omits the section for a snapshot written before the table existed", () => {
       // Live KV still holds these until the next refresh overwrites them.
       const legacy = snapshot();
