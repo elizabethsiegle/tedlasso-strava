@@ -72,6 +72,13 @@ curl "http://localhost:8787/__scheduled?cron=0+*/4+*+*+*"
 **This page is public.** Anyone with the URL can see the last activity's name, sport,
 distance, and timing, a rolling sense of workout frequency, and the shape of the route.
 
+The results table publishes the last `TUNING.RESULTS_ROWS` (default `8`) activities as date,
+sport, distance, and time, each linking to `strava.com/activities/<id>`. Activity **names are
+deliberately excluded** from those rows — a title like "Morning Ride in Noe Valley" would give
+away the place the route trimming exists to hide. The links do expose Strava activity ids, but
+grant no access: an activity that is private on Strava stays private to whoever follows the
+link. Lower `RESULTS_ROWS` to shorten the table, or set it to `0` to drop it entirely.
+
 Routes are trimmed by `PRIVACY_TRIM_M` metres (default `250`) at both the start and the end,
 and anywhere the route passes back near either its original start or its original end —
 because the Worker requests the `activity:read_all` scope, which bypasses Strava's own

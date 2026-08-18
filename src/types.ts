@@ -1,4 +1,4 @@
-import type { LastActivity } from "./domain/activity";
+import type { LastActivity, RecentActivity } from "./domain/activity";
 import type { RouteRender } from "./domain/route";
 
 export interface PublicFacts {
@@ -8,6 +8,9 @@ export interface PublicFacts {
   baselineWeekly: number;
   streakDays: number;
   totalActivities: number;
+  // Absent from snapshots written before the results table shipped. Rendering
+  // must tolerate that rather than assume the array is there.
+  recent?: RecentActivity[];
 }
 
 export interface Snapshot {

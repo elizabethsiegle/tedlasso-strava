@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { deriveFacts, median } from "../../src/domain/facts";
+import { TUNING } from "../../src/domain/tuning";
 import { daysAgo, makeActivity } from "../fixtures/activities";
 
 const LA = "America/Los_Angeles";
@@ -136,5 +137,37 @@ describe("baselineWeekly", () => {
     for (let week = 0; week < 12; week++) offsets.push(7 + week * 7 + 1);
     const f = deriveFacts(daysAgo(NOW, offsets), NOW, LA);
     expect(f.baselineWeekly).toBe(1); // the burst in the current week does not inflate it
+  });
+});
+
+describe("deriveFacts recent (results table rows)", () => {
+  it("caps the rows at TUNING.RESULTS_ROWS, newest first", () => {
+    const activities = daysAgo(NOW, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+    const f = deriveFacts(activities, NOW, LA);
+
+    expect(f.recent).toHaveLength(TUNING.RESULTS_ROWS);
+    const days = f.recent.map((r) => r.day);
+    expect([...days].sort().reverse()).toEqual(days);
+  });
+
+  it("resolves `day` in the athlete's timezone, not UTC", () => {
+    // 2026-08-15T02:00:00Z is 7pm PDT on the 14th. A UTC-derived date would
+    // file this workout under the 15th and shift the whole table by a day.
+    const evening = makeActivity({ startedAt: Date.parse("2026-08-15T02:00:00Z") });
+    const f = deriveFacts([evening], Date.parse("2026-08-15T03:00:00Z"), LA);
+
+    expect(f.recent[0]?.day).toBe("2026-08-14");
+  });
+
+  it("carries the Strava id but never the activity name", () => {
+    const a = makeActivity({ id: 4242, name: "Morning Ride in Noe Valley" });
+    const f = deriveFacts([a], NOW, LA);
+
+    expect(f.recent[0]?.id).toBe(4242);
+    expect(JSON.stringify(f.recent)).not.toContain("Noe Valley");
+  });
+
+  it("is empty when there are no activities", () => {
+    expect(deriveFacts([], NOW, LA).recent).toEqual([]);
   });
 });
