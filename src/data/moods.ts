@@ -71,7 +71,36 @@ export const MOODS: Mood[] = [
         character: "Ted Lasso",
       },
     ],
-    media: [],
+    media: [
+      {
+        kind: "gif",
+        url: "https://media.giphy.com/media/l1uHfSdEdgHGKxOvcq/giphy.gif",
+        alt: "Ted Lasso looking sad and deflated.",
+        source: "Giphy",
+        verifiedOn: "2026-08-17",
+      },
+      {
+        kind: "gif",
+        url: "https://media.giphy.com/media/FJ9Fdud5b26E8OhgdW/giphy.gif",
+        alt: "Ted Lasso looking lost and unsure.",
+        source: "Giphy",
+        verifiedOn: "2026-08-17",
+      },
+      {
+        kind: "gif",
+        url: "https://media.giphy.com/media/XEVEIm85fGGAQMQpq4/giphy.gif",
+        alt: "A downcast Ted, quiet and sad.",
+        source: "Giphy",
+        verifiedOn: "2026-08-17",
+      },
+      {
+        kind: "gif",
+        url: "https://media.giphy.com/media/W6i8VJICgSn9A5qBqK/giphy.gif",
+        alt: "Ted Lasso waving goodbye to someone.",
+        source: "Giphy",
+        verifiedOn: "2026-08-17",
+      },
+    ],
   },
   {
     id: "believe",
@@ -228,7 +257,22 @@ export const MOODS: Mood[] = [
       },
       { text: "The harder you work, the luckier you get.", character: "Ted Lasso" },
     ],
-    media: [],
+    media: [
+      {
+        kind: "gif",
+        url: "https://media.giphy.com/media/aCguaqXP2s1qRwvZCn/giphy.gif",
+        alt: "Ted Lasso urging a player on.",
+        source: "Giphy",
+        verifiedOn: "2026-08-17",
+      },
+      {
+        kind: "gif",
+        url: "https://media.giphy.com/media/ui0InHDmrAPg0zbmTJ/giphy.gif",
+        alt: "Ted Lasso asking what are you doing.",
+        source: "Giphy",
+        verifiedOn: "2026-08-17",
+      },
+    ],
   },
   {
     id: "hopeful",
@@ -250,7 +294,22 @@ export const MOODS: Mood[] = [
       // specifies pending a fan/transcript check.
       { text: "Small acts of kindness never go unnoticed.", character: "Ted Lasso" },
     ],
-    media: [],
+    media: [
+      {
+        kind: "gif",
+        url: "https://media.giphy.com/media/inzHjDkrSktCdw2EGn/giphy.gif",
+        alt: "Ted Lasso saying trust me.",
+        source: "Giphy",
+        verifiedOn: "2026-08-17",
+      },
+      {
+        kind: "gif",
+        url: "https://media.giphy.com/media/2bbDxqLAyYzd7Z4Pb8/giphy.gif",
+        alt: "The Richmond squad showing solidarity together.",
+        source: "Giphy",
+        verifiedOn: "2026-08-17",
+      },
+    ],
   },
   {
     id: "biscuits",
@@ -271,7 +330,15 @@ export const MOODS: Mood[] = [
       // check.
       { text: "Taking a break is not the same as giving up.", character: "Ted Lasso" },
     ],
-    media: [],
+    media: [
+      {
+        kind: "gif",
+        url: "https://media.giphy.com/media/n424iLDqTlHRrWtkLl/giphy.gif",
+        alt: "Rebecca Welton reacting in her office.",
+        source: "Giphy",
+        verifiedOn: "2026-08-17",
+      },
+    ],
   },
 ];
 
