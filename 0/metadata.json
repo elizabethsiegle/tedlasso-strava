@@ -1,0 +1,167 @@
+{
+  "cli_version": "0.10.0",
+  "checkpoint_id": "01M0B7KR4RZQD8A8SMVH9VBET3",
+  "session_id": "a695fd6e-b362-4517-8edd-2541f3241265",
+  "strategy": "manual-commit",
+  "created_at": "2026-08-18T20:04:43.894506Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "docs/superpowers/plans/2026-08-18-ted-lasso-strava-mood-board.md",
+    "tedlasso-strava"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-opus-5",
+  "turn_id": "e5288f2b327f",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 94,
+    "cache_creation_tokens": 255385,
+    "cache_read_tokens": 4850859,
+    "output_tokens": 159762,
+    "api_call_count": 47
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "claude-skill-toolu_01MMx4awpEShx97uu2p8NvN1",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "superpowers:brainstorming"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "e5288f2b327f",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 20,
+        "end": 21,
+        "entry_ids": [
+          "8816ca82-45f6-4ce9-aed5-d39c8ac6bee7"
+        ],
+        "tool_use_id": "toolu_01MMx4awpEShx97uu2p8NvN1"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01MMx4awpEShx97uu2p8NvN1"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: superpowers:brainstorming",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_01URpSc7aED8YzGxHi49th5x",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "superpowers:writing-plans"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "e5288f2b327f",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 145,
+        "end": 146,
+        "entry_ids": [
+          "d8e49921-c843-4101-a71a-506bc2aff6a4"
+        ],
+        "tool_use_id": "toolu_01URpSc7aED8YzGxHi49th5x"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01URpSc7aED8YzGxHi49th5x"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: superpowers:writing-plans",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "initial_attribution": {
+    "calculated_at": "2026-08-18T20:04:43.846338Z",
+    "agent_lines": 4600,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 4600,
+    "total_lines_changed": 4600,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 15369,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        ".claude/settings.json": 84,
+        ".codex/hooks.json": 52,
+        "tedlasso-strava/.claude/settings.json": 84,
+        "tedlasso-strava/.codex/hooks.json": 52,
+        "tedlasso-strava/.dev.vars.example": 5,
+        "tedlasso-strava/.entire/.gitignore": 5,
+        "tedlasso-strava/.entire/settings.json": 9,
+        "tedlasso-strava/.gitignore": 4,
+        "tedlasso-strava/CLAUDE.md": 63,
+        "tedlasso-strava/README.md": 103,
+        "tedlasso-strava/docs/superpowers/plans/2026-08-14-tedlasso-strava.md": 4870,
+        "tedlasso-strava/docs/superpowers/specs/2026-08-14-tedlasso-strava-design.md": 547,
+        "tedlasso-strava/package-lock.json": 4134,
+        "tedlasso-strava/package.json": 21,
+        "tedlasso-strava/src/app/auth.ts": 113,
+        "tedlasso-strava/src/app/client.ts": 43,
+        "tedlasso-strava/src/app/refresh.ts": 138,
+        "tedlasso-strava/src/app/render.ts": 258,
+        "tedlasso-strava/src/app/styles.ts": 178,
+        "tedlasso-strava/src/data/moods.ts": 264,
+        "tedlasso-strava/src/domain/activity.ts": 37,
+        "tedlasso-strava/src/domain/axes.ts": 32,
+        "tedlasso-strava/src/domain/facts.ts": 129,
+        "tedlasso-strava/src/domain/mood.ts": 111,
+        "tedlasso-strava/src/domain/quote.ts": 22,
+        "tedlasso-strava/src/domain/route.ts": 272,
+        "tedlasso-strava/src/domain/time.ts": 66,
+        "tedlasso-strava/src/domain/tuning.ts": 58,
+        "tedlasso-strava/src/infrastructure/store/kv.ts": 79,
+        "tedlasso-strava/src/infrastructure/strava/client.ts": 92,
+        "tedlasso-strava/src/infrastructure/strava/map.ts": 41,
+        "tedlasso-strava/src/types.ts": 40,
+        "tedlasso-strava/src/worker.ts": 218,
+        "tedlasso-strava/test/app/auth.test.ts": 229,
+        "tedlasso-strava/test/app/refresh-ui.test.ts": 53,
+        "tedlasso-strava/test/app/refresh.test.ts": 364,
+        "tedlasso-strava/test/app/render.test.ts": 327,
+        "tedlasso-strava/test/app/route-render.test.ts": 157,
+        "tedlasso-strava/test/app/routes.test.ts": 251,
+        "tedlasso-strava/test/data/moods.test.ts": 115,
+        "tedlasso-strava/test/domain/axes.test.ts": 94,
+        "tedlasso-strava/test/domain/effort.test.ts": 139,
+        "tedlasso-strava/test/domain/facts.test.ts": 140,
+        "tedlasso-strava/test/domain/mood.test.ts": 156,
+        "tedlasso-strava/test/domain/quote.test.ts": 104,
+        "tedlasso-strava/test/domain/route-decode.test.ts": 129,
+        "tedlasso-strava/test/domain/route-render.test.ts": 428,
+        "tedlasso-strava/test/domain/time.test.ts": 74,
+        "tedlasso-strava/test/fixtures/activities.ts": 27,
+        "tedlasso-strava/test/infrastructure/kv.test.ts": 90,
+        "tedlasso-strava/test/infrastructure/strava.test.ts": 210,
+        "tedlasso-strava/test/tsconfig.json": 8,
+        "tedlasso-strava/tsconfig.json": 15,
+        "tedlasso-strava/vitest.config.ts": 17,
+        "tedlasso-strava/wrangler.jsonc": 18
+      }
+    }
+  ]
+}
