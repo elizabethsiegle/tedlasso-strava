@@ -13,10 +13,10 @@ export function renderCatalogue(nowMs: number): string {
   const totals = MOODS.reduce(
     (acc, m) => ({
       quotes: acc.quotes + m.quotes.length,
-      gifs: acc.gifs + m.gifs.length,
-      stale: acc.stale + m.gifs.filter((g) => isGifStale(g.verifiedOn, nowMs)).length,
+      media: acc.media + m.media.length,
+      stale: acc.stale + m.media.filter((g) => isGifStale(g.verifiedOn, nowMs)).length,
     }),
-    { quotes: 0, gifs: 0, stale: 0 },
+    { quotes: 0, media: 0, stale: 0 },
   );
 
   const sections = MOODS.map((mood) => {
@@ -29,16 +29,17 @@ export function renderCatalogue(nowMs: number): string {
       )
       .join("");
 
-    const gifs = mood.gifs
+    const media = mood.media
       .map((g) => {
         const stale = isGifStale(g.verifiedOn, nowMs)
           ? `<span class="stale-marker">unverified ${TUNING.STALE_VERIFIED_DAYS}+ days</span>`
           : "";
         return `<tr>
+          <td class="cat-kind">${escapeHtml(g.kind)}</td>
           <td class="cat-alt">${escapeHtml(g.alt)}</td>
           <td class="cat-who">${escapeHtml(g.source)}</td>
           <td class="cat-when">${escapeHtml(g.verifiedOn)} ${stale}</td>
-          <td class="results-out"><a href="${escapeHtml(g.url)}" rel="noopener" aria-label="Open the GIF for ${escapeHtml(mood.name)}">&#8599;</a></td>
+          <td class="results-out"><a href="${escapeHtml(g.url)}" rel="noopener" aria-label="Open the ${escapeHtml(g.kind)} for ${escapeHtml(mood.name)}">&#8599;</a></td>
         </tr>`;
       })
       .join("");
@@ -48,11 +49,11 @@ export function renderCatalogue(nowMs: number): string {
       <p class="cat-meta">
         <span>id <code>${escapeHtml(mood.id)}</code></span>
         <span>verified ${escapeHtml(mood.verifiedOn)}</span>
-        <span>${mood.quotes.length} quotes · ${mood.gifs.length} gifs</span>
+        <span>${mood.quotes.length} quotes · ${mood.media.length} media</span>
         <a href="/?preview=${encodeURIComponent(mood.id)}">Preview this mood</a>
       </p>
       <table class="cat-table"><tbody>${quotes}</tbody></table>
-      <table class="cat-table cat-gifs"><tbody>${gifs}</tbody></table>
+      <table class="cat-table cat-gifs"><tbody>${media}</tbody></table>
     </section>`;
   }).join("");
 
@@ -70,14 +71,14 @@ export function renderCatalogue(nowMs: number): string {
   <header class="masthead">
     <h1 class="mood-name">Catalogue</h1>
     <div class="masthead-meta">
-      ${MOODS.length} moods · ${totals.quotes} quotes · ${totals.gifs} gifs${
+      ${MOODS.length} moods · ${totals.quotes} quotes · ${totals.media} media${
         totals.stale > 0 ? ` · <span class="stale-marker">${totals.stale} unverified</span>` : ""
       }
     </div>
   </header>
 
   <p class="cat-intro">
-    Every quote and GIF the site can serve, read straight from the versioned
+    Every quote, GIF, still and clip the site can serve, read straight from the versioned
     catalogue in <code>src/data/moods.ts</code>. A mood is chosen from your Strava
     activity; the quote and GIF within it are seeded from the snapshot's refresh
     time, so the same refresh always yields the same pairing.

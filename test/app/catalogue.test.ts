@@ -24,7 +24,7 @@ describe("renderCatalogue", () => {
   it("prints every quote and every gif, not a sample", () => {
     const html = renderCatalogue(NOW);
     const quotes = MOODS.flatMap((m) => m.quotes);
-    const gifs = MOODS.flatMap((m) => m.gifs);
+    const gifs = MOODS.flatMap((m) => m.media);
 
     expect(quotes.length).toBeGreaterThan(0);
     for (const q of quotes) {
@@ -49,7 +49,7 @@ describe("renderCatalogue", () => {
     // the newest verifiedOn, not on NOW: entries verified after NOW would still
     // be inside the window if the offset were measured from the fixture clock.
     const newest = Math.max(
-      ...MOODS.flatMap((m) => m.gifs).map((g) => Date.parse(g.verifiedOn)),
+      ...MOODS.flatMap((m) => m.media).map((g) => Date.parse(g.verifiedOn)),
     );
     const later = newest + (TUNING.STALE_VERIFIED_DAYS + 1) * DAY_MS;
     const html = renderCatalogue(later);

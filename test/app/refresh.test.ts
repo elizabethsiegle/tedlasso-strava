@@ -284,7 +284,7 @@ describe("runRefresh", () => {
     // account for.
     await runRefresh(deps(happyClient([])), NOW);
     const snap = await new KvStore(kv()).getSnapshot();
-    const catalogueGif = getMood("preseason")!.gifs[0]!;
+    const catalogueGif = getMood("preseason")!.media[0]!;
     expect(snap!.gif).not.toBeNull();
     expect(snap!.gif!.verifiedOn).toBe(catalogueGif.verifiedOn);
   });

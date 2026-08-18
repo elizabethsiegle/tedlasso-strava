@@ -187,13 +187,13 @@ export default {
       let previewNotice: string | null = null;
 
       if (previewMood) {
-        const { quote, gif } = pickQuote(previewMood, nowMs);
+        const { quote, media } = pickQuote(previewMood, nowMs);
         const base = snapshot ?? EMPTY_PREVIEW_SNAPSHOT;
         shown = {
           ...base,
           mood: { id: previewMood.id, name: previewMood.name, accent: previewMood.accent },
           quote,
-          gif: gif ? { url: gif.url, alt: gif.alt, verifiedOn: gif.verifiedOn } : null,
+          gif: media ? { url: media.url, alt: media.alt, verifiedOn: media.verifiedOn, kind: media.kind } : null,
         };
         previewNotice = `Preview — not your live mood.`;
       }
