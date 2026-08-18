@@ -1,4 +1,4 @@
-import type { Activity, Facts, LastActivity } from "./activity";
+import type { Activity, Facts, LastActivity, RecentActivity } from "./activity";
 import { addDaysMs, dayKey, daysBetween, startOfDayMs } from "./time";
 import { DAY_MS, TUNING } from "./tuning";
 
@@ -18,6 +18,16 @@ function toLastActivity(a: Activity): LastActivity {
     movingTimeS: a.movingTimeS,
     elevationM: a.elevationM,
     startedAt: a.startedAt,
+  };
+}
+
+function toRecentActivity(a: Activity, tz: string): RecentActivity {
+  return {
+    id: a.id,
+    sportType: a.sportType,
+    distanceM: a.distanceM,
+    movingTimeS: a.movingTimeS,
+    day: dayKey(a.startedAt, tz),
   };
 }
 
@@ -120,6 +130,7 @@ export function deriveFacts(activities: Activity[], nowMs: number, tz: string): 
     baselineWeekly: computeBaseline(inWindow, nowMs, tz, countLast28),
     streakDays: computeStreak(inWindow, nowMs, tz),
     previousGapDays: last && previous ? daysBetween(previous.startedAt, last.startedAt) : null,
+    recent: inWindow.slice(0, TUNING.RESULTS_ROWS).map((a) => toRecentActivity(a, tz)),
     // "Longest/fastest in 90 days" — never "personal record"/"PR": activity
     // summaries don't carry best-effort data, so these are scoped to the window.
     relEffortLast: last ? computeRelEffort(last, inWindow.slice(1)) : 0,

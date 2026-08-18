@@ -66,6 +66,55 @@ function agoLabel(days: number | null): string {
   return `${Math.floor(days)} days ago`;
 }
 
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
+const MONTHS = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+] as const;
+
+/**
+ * `2026-08-13` -> `Wed 13 Aug`. The date arrives already resolved to the
+ * athlete's local day (see RecentActivity), so it is parsed as UTC purely to
+ * split the string — no timezone is applied here.
+ */
+function resultDate(day: string): string {
+  const ms = Date.parse(`${day}T00:00:00Z`);
+  if (!Number.isFinite(ms)) return day;
+  const d = new Date(ms);
+  return `${WEEKDAYS[d.getUTCDay()]} ${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`;
+}
+
+/**
+ * The results table: the evidence behind the mood copy's claims about streaks
+ * and weekly counts. Each row links out to the activity on Strava, which
+ * resolves for a visitor only if that activity is public on Strava — the link
+ * grants no access the athlete hasn't already granted there.
+ */
+function results(snapshot: Snapshot): string {
+  const recent = snapshot.facts.recent ?? [];
+  if (recent.length === 0) return "";
+
+  const rows = recent
+    .map((a) => {
+      const sport = escapeHtml(a.sportType);
+      const when = escapeHtml(resultDate(a.day));
+      const href = `https://www.strava.com/activities/${encodeURIComponent(String(a.id))}`;
+      return `<tr>
+        <td class="results-day">${when}</td>
+        <td>${sport}</td>
+        <td class="results-num">${km(a.distanceM)} km</td>
+        <td class="results-num">${duration(a.movingTimeS)}</td>
+        <td class="results-out"><a href="${href}" rel="noopener" aria-label="View this ${sport} on Strava">&#8599;</a></td>
+      </tr>`;
+    })
+    .join("");
+
+  return `<section class="results">
+    <h2 class="results-head">Results — last ${recent.length}</h2>
+    <table><tbody>${rows}</tbody></table>
+  </section>`;
+}
+
 function receipts(snapshot: Snapshot): string {
   const f = snapshot.facts;
   const rows: [string, string][] = [
@@ -245,6 +294,7 @@ export function renderPage(view: PageView): string {
   <hr class="rule">
   ${snapshot ? renderRoute(snapshot.route, snapshot) : ""}
   ${snapshot ? receipts(snapshot) : ""}
+  ${snapshot ? results(snapshot) : ""}
 
   <footer class="footer">
     <span><a href="https://www.strava.com" rel="noopener">Powered by Strava</a></span>

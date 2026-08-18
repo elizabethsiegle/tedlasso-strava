@@ -45,6 +45,10 @@ export const TUNING = {
   ROUTE_PADDING: 40,
 
   // Presentation
+  // Rows in the published results table. Every row is one more activity id on
+  // a public page, so this stays small: enough to show the week the mood copy
+  // is claiming, not a browsable training log.
+  RESULTS_ROWS: 8,
   STALE_SNAPSHOT_HOURS: 12,
   STALE_VERIFIED_DAYS: 180,
   MANUAL_REFRESH_COOLDOWN_MS: 60_000,

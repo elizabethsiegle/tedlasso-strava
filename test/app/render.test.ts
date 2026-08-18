@@ -274,6 +274,46 @@ describe("renderPage", () => {
     expect(html).toContain("35m");
   });
 
+  describe("results table", () => {
+    const withRows = snapshot({
+      facts: {
+        ...snapshot().facts,
+        recent: [
+          { id: 111, sportType: "Ride", distanceM: 24_100, movingTimeS: 3734, day: "2026-08-13" },
+          { id: 222, sportType: "Run", distanceM: 8_000, movingTimeS: 2499, day: "2026-08-12" },
+        ],
+      },
+    });
+
+    it("renders a row per activity, linking each to Strava", () => {
+      const html = renderPage(view({ snapshot: withRows }));
+      expect(html).toContain('class="results"');
+      expect(html).toContain("https://www.strava.com/activities/111");
+      expect(html).toContain("https://www.strava.com/activities/222");
+      expect(html).toContain("Results — last 2");
+    });
+
+    it("formats the local day and the distance as the sheet sets numbers", () => {
+      const html = renderPage(view({ snapshot: withRows }));
+      expect(html).toContain("Thu 13 Aug");
+      expect(html).toContain("24.1 km");
+    });
+
+    it("gives every link an accessible name rather than a bare arrow", () => {
+      const html = renderPage(view({ snapshot: withRows }));
+      expect(html).toContain('aria-label="View this Ride on Strava"');
+    });
+
+    it("omits the section for a snapshot written before the table existed", () => {
+      // Live KV still holds these until the next refresh overwrites them.
+      const legacy = snapshot();
+      delete (legacy.facts as { recent?: unknown }).recent;
+      const html = renderPage(view({ snapshot: legacy }));
+      expect(html).not.toContain('class="results"');
+      expect(html).toContain("Powered by Strava");
+    });
+  });
+
   describe("colophon", () => {
     it("pins the Entire credit line on every page, snapshot or not", () => {
       for (const html of [renderPage(view()), renderPage(view({ snapshot: null }))]) {

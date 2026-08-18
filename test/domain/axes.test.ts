@@ -18,6 +18,7 @@ function facts(overrides: Partial<Facts> = {}): Facts {
     relEffortLast: 0.5,
     isLongest90: false,
     isFastest90: false,
+    recent: [],
     previousGapDays: 2,
     ...overrides,
   };

@@ -176,6 +176,42 @@ body[data-refreshing="true"] .hero { opacity: .35; transition: opacity .35s ease
   padding: 2.5rem .25rem;
 }
 
+/* A results table off the back page of a matchday programme: no frame, no
+   zebra striping, just a heavy rule under the heading and hairlines between
+   fixtures. Tighter than the hero on purpose — that density contrast is the
+   layout. */
+.results { margin-top: 1.75rem; }
+.results-head {
+  font-family: var(--display);
+  font-size: .68rem; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--ink-soft);
+  margin: 0 0 .35rem;
+  padding-bottom: .35rem;
+  border-bottom: 3px solid var(--ink);
+}
+.results table { width: 100%; border-collapse: collapse; }
+.results td {
+  padding: .38rem 0;
+  border-bottom: 1px solid var(--rule);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+.results-day {
+  font-family: var(--display);
+  font-size: .72rem; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+.results-num { text-align: right; padding-left: .75rem; white-space: nowrap; }
+/* The link is a mark in the margin, not a button: the row is the content and
+   the arrow just says there is somewhere to go. */
+.results-out { text-align: right; padding-left: .9rem; width: 1.5rem; }
+.results-out a {
+  color: var(--ink-accent);
+  text-decoration: none;
+  font-size: .9rem;
+}
+.results-out a:hover, .results-out a:focus-visible { text-decoration: underline; }
+
 /* The imprint line a printed programme carries at the foot of every sheet.
    Heavy top rule to echo the masthead, set in the display face but left
    lowercase — a hand-set credit, not another uppercase section label. Pinned

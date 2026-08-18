@@ -92,6 +92,7 @@ export async function runRefresh(deps: RefreshDeps, nowMs: number): Promise<Refr
         baselineWeekly: facts.baselineWeekly,
         streakDays: facts.streakDays,
         totalActivities: facts.totalActivities,
+        recent: facts.recent,
       },
       route: lastActivity ? buildRoute(lastActivity, privacyTrimM) : null,
     };
