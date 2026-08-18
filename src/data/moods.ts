@@ -122,10 +122,17 @@ export const MOODS: Mood[] = [
     media: [
       {
         kind: "gif",
-        url: "https://media.giphy.com/media/5B925WaCAIWojy3KMG/giphy.gif",
-        alt: "Ted Lasso conveys a hopeful believe message.",
+        url: "https://media.giphy.com/media/KG9iDKqmrUVXaHrR9q/giphy.gif",
+        alt: "A Ted Lasso Believe sticker.",
         source: "Giphy",
-        verifiedOn: "2026-08-16",
+        verifiedOn: "2026-08-18",
+      },
+      {
+        kind: "gif",
+        url: "https://media.giphy.com/media/inzHjDkrSktCdw2EGn/giphy.gif",
+        alt: "Ted Lasso saying trust me.",
+        source: "Giphy",
+        verifiedOn: "2026-08-17",
       },
     ],
   },
@@ -295,13 +302,6 @@ export const MOODS: Mood[] = [
       { text: "Small acts of kindness never go unnoticed.", character: "Ted Lasso" },
     ],
     media: [
-      {
-        kind: "gif",
-        url: "https://media.giphy.com/media/inzHjDkrSktCdw2EGn/giphy.gif",
-        alt: "Ted Lasso saying trust me.",
-        source: "Giphy",
-        verifiedOn: "2026-08-17",
-      },
       {
         kind: "gif",
         url: "https://media.giphy.com/media/2bbDxqLAyYzd7Z4Pb8/giphy.gif",
