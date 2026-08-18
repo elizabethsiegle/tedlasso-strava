@@ -41,9 +41,9 @@ describe("pickQuote", () => {
     expect(seen.size).toBeGreaterThan(1);
   });
 
-  it("returns a null gif when a mood has none verified", () => {
-    const empty = { ...mood, gifs: [] };
-    expect(pickQuote(empty, 1).gif).toBeNull();
+  it("returns null media when a mood has none verified", () => {
+    const empty = { ...mood, media: [] };
+    expect(pickQuote(empty, 1).media).toBeNull();
   });
 
   it("works for every mood in the catalogue", () => {
@@ -66,12 +66,14 @@ describe("pickQuote", () => {
 describe("pickQuote gif selection", () => {
   const syntheticGifs = [
     {
+      kind: "gif" as const,
       url: "https://example.test/fixture-one.gif",
       alt: "Synthetic fixture gif used only to pin pickQuote's gif branch",
       source: "test fixture",
       verifiedOn: "2026-08-14",
     },
     {
+      kind: "gif" as const,
       url: "https://example.test/fixture-two.gif",
       alt: "Second synthetic fixture gif for the same branch-logic test",
       source: "test fixture",
@@ -85,20 +87,20 @@ describe("pickQuote gif selection", () => {
     accent: "#123456",
     verifiedOn: "2026-08-14",
     quotes: [{ text: "Fixture quote text.", character: "Fixture Character" }],
-    gifs: syntheticGifs,
+    media: syntheticGifs,
   };
 
-  it("returns one of the mood's own gifs, deterministically, when gifs are present", () => {
+  it("returns one of the mood's own media, deterministically, when media are present", () => {
     const first = pickQuote(syntheticMood, 777);
     const second = pickQuote(syntheticMood, 777);
 
-    expect(first.gif).not.toBeNull();
-    expect(syntheticMood.gifs).toContainEqual(first.gif);
-    expect(second.gif).toEqual(first.gif);
+    expect(first.media).not.toBeNull();
+    expect(syntheticMood.media).toContainEqual(first.media);
+    expect(second.media).toEqual(first.media);
   });
 
-  it("returns a null gif for the complementary case: a mood with no gifs", () => {
-    const noGifMood: Mood = { ...syntheticMood, gifs: [] };
-    expect(pickQuote(noGifMood, 777).gif).toBeNull();
+  it("returns null media for the complementary case: a mood with none", () => {
+    const noMediaMood: Mood = { ...syntheticMood, media: [] };
+    expect(pickQuote(noMediaMood, 777).media).toBeNull();
   });
 });

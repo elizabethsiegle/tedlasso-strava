@@ -239,10 +239,18 @@ export function renderPage(view: PageView): string {
   }
 
   const hasGif = Boolean(snapshot?.gif);
-  const gifColumn = snapshot?.gif
-    ? `<div class="hero-gif"><img class="gif" src="${escapeHtml(snapshot.gif.url)}" alt="${escapeHtml(snapshot.gif.alt)}" ` +
-      `loading="eager" decoding="async"></div>`
-    : "";
+  // A video is offered as a link, never an embedded player: an iframe would put
+  // a third party in the read path and hand the loudest object on the page to
+  // something that isn't the quote. Gifs and stills both render as <img> —
+  // there is nothing to branch on between them.
+  const gifColumn = !snapshot?.gif
+    ? ""
+    : snapshot.gif.kind === "video"
+      ? `<div class="hero-gif"><a class="hero-video" href="${escapeHtml(snapshot.gif.url)}" rel="noopener">` +
+        `<span class="hero-video-cue">Watch the clip</span>` +
+        `<span class="hero-video-alt">${escapeHtml(snapshot.gif.alt)}</span></a></div>`
+      : `<div class="hero-gif"><img class="gif" src="${escapeHtml(snapshot.gif.url)}" alt="${escapeHtml(snapshot.gif.alt)}" ` +
+        `loading="eager" decoding="async"></div>`;
 
   const reasons = snapshot?.reasons.length
     ? `<ul class="reasons">${snapshot.reasons.map((r) => `<li>${escapeHtml(r)}</li>`).join("")}</ul>`

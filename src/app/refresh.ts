@@ -70,7 +70,7 @@ export async function runRefresh(deps: RefreshDeps, nowMs: number): Promise<Refr
 
     const mood = getMood(selection.moodId);
     if (!mood) throw new Error(`selectMood returned unknown mood id: ${selection.moodId}`);
-    const { quote, gif } = pickQuote(mood, nowMs);
+    const { quote, media } = pickQuote(mood, nowMs);
 
     // buildRoute needs the full Activity (it carries the polyline); Facts.last
     // is a trimmed projection that does not. Sort the raw activities ourselves
@@ -93,7 +93,7 @@ export async function runRefresh(deps: RefreshDeps, nowMs: number): Promise<Refr
       refreshedAt: nowMs,
       mood: { id: mood.id, name: mood.name, accent: mood.accent },
       quote,
-      gif: gif ? { url: gif.url, alt: gif.alt, verifiedOn: gif.verifiedOn } : null,
+      gif: media ? { url: media.url, alt: media.alt, verifiedOn: media.verifiedOn, kind: media.kind } : null,
       scores,
       reasons: selection.reasons,
       facts: {

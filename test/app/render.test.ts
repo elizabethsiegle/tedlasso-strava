@@ -346,6 +346,42 @@ describe("renderPage", () => {
     });
   });
 
+  describe("media kinds", () => {
+    it("renders a still image inline, exactly as it renders a gif", () => {
+      const still = snapshot({
+        gif: { url: "https://example.test/meme.png", alt: "A Ted Lasso meme still.", verifiedOn: "2026-08-14", kind: "image" },
+      });
+      const html = renderPage(view({ snapshot: still }));
+      expect(html).toContain('<img class="gif" src="https://example.test/meme.png"');
+      // Substring, not class match: the inlined stylesheet defines .hero-video
+      // regardless of what is rendered, so assert on the attribute.
+      expect(html).not.toContain('class="hero-video"');
+    });
+
+    it("offers a video as a link and never as an embedded player", () => {
+      const clip = snapshot({
+        gif: { url: "https://www.youtube.com/watch?v=abc123", alt: "Ted explains the offside rule.", verifiedOn: "2026-08-14", kind: "video" },
+      });
+      const html = renderPage(view({ snapshot: clip }));
+      expect(html).toContain('class="hero-video"');
+      expect(html).toContain("https://www.youtube.com/watch?v=abc123");
+      expect(html).toContain("Ted explains the offside rule.");
+      // The whole point of the link treatment: no third party in the read path.
+      expect(html).not.toContain("<iframe");
+      expect(html).not.toContain("<video");
+      expect(html).not.toContain('<img class="gif"');
+    });
+
+    it("treats a snapshot with no kind as a gif, not as a broken entry", () => {
+      const legacy = snapshot({
+        gif: { url: "https://example.test/old.gif", alt: "A gif stored before kinds existed.", verifiedOn: "2026-08-14" },
+      });
+      const html = renderPage(view({ snapshot: legacy }));
+      expect(html).toContain('<img class="gif" src="https://example.test/old.gif"');
+      expect(html).not.toContain('class="hero-video"');
+    });
+  });
+
   describe("colophon", () => {
     it("pins the Entire credit line on every page, snapshot or not", () => {
       for (const html of [renderPage(view()), renderPage(view({ snapshot: null }))]) {

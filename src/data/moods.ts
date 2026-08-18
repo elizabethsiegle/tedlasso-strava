@@ -3,7 +3,16 @@ export interface Quote {
   character: string;
 }
 
-export interface Gif {
+export type MediaKind = "gif" | "image" | "video";
+
+/**
+ * One piece of media attached to a mood. `kind` decides how it renders: a gif
+ * or image goes inline in the hero, a video is offered as a link rather than an
+ * embedded player — an iframe would put a third party in the read path and
+ * out-shout the quote, which is meant to be the largest thing on the page.
+ */
+export interface Media {
+  kind: MediaKind;
   url: string;
   alt: string;
   source: string;
@@ -15,7 +24,7 @@ export interface Mood {
   name: string;
   accent: string;
   quotes: Quote[];
-  gifs: Gif[];
+  media: Media[];
   verifiedOn: string;
 }
 
@@ -33,8 +42,9 @@ export const MOODS: Mood[] = [
       },
       { text: "There's two buttons I never like to hit: panic and snooze.", character: "Ted Lasso" },
     ],
-    gifs: [
+    media: [
       {
+        kind: "gif",
         url: "https://media.giphy.com/media/RzE8jPRlLeEyEB6Dmf/giphy.gif",
         alt: "Ted Lasso looks nervous and anxious.",
         source: "Giphy",
@@ -61,7 +71,7 @@ export const MOODS: Mood[] = [
         character: "Ted Lasso",
       },
     ],
-    gifs: [],
+    media: [],
   },
   {
     id: "believe",
@@ -80,8 +90,9 @@ export const MOODS: Mood[] = [
       },
       { text: "Doing the right thing is never the wrong thing.", character: "Ted Lasso" },
     ],
-    gifs: [
+    media: [
       {
+        kind: "gif",
         url: "https://media.giphy.com/media/5B925WaCAIWojy3KMG/giphy.gif",
         alt: "Ted Lasso conveys a hopeful believe message.",
         source: "Giphy",
@@ -102,14 +113,16 @@ export const MOODS: Mood[] = [
       { text: "I don't want to be lucky. I want to be good.", character: "Roy Kent" },
       { text: "Be curious, not judgmental.", character: "Ted Lasso" },
     ],
-    gifs: [
+    media: [
       {
+        kind: "gif",
         url: "https://media.giphy.com/media/5erpxvvqEBWBeFhrHa/giphy.gif",
         alt: "Roy Kent's face flashes with sudden, exasperated frustration.",
         source: "Giphy",
         verifiedOn: "2026-08-16",
       },
       {
+        kind: "gif",
         url: "https://media.giphy.com/media/Zod24bq6PTegwxMAcK/giphy.gif",
         alt: "Roy Kent's scowl conveys blunt irritation.",
         source: "Giphy",
@@ -134,8 +147,9 @@ export const MOODS: Mood[] = [
         character: "Leslie Higgins",
       },
     ],
-    gifs: [
+    media: [
       {
+        kind: "gif",
         url: "https://media.giphy.com/media/oxQDaZaJUMNwxbPUx5/giphy.gif",
         alt: "An animated goldfish illustrates forgetting and moving on quickly.",
         source: "Giphy",
@@ -156,8 +170,9 @@ export const MOODS: Mood[] = [
         character: "Ted Lasso",
       },
     ],
-    gifs: [
+    media: [
       {
+        kind: "gif",
         url: "https://media.giphy.com/media/yPK2Mo5zXUF8NsE8gE/giphy.gif",
         alt: "The Diamond Dogs gather together in a moment of camaraderie.",
         source: "Giphy",
@@ -184,8 +199,9 @@ export const MOODS: Mood[] = [
         character: "Trent Crimm",
       },
     ],
-    gifs: [
+    media: [
       {
+        kind: "gif",
         url: "https://media.giphy.com/media/UL3kNMFvmKGXlOD8Qu/giphy.gif",
         alt: "Dani Rojas cheerfully declares that football is life.",
         source: "Giphy",
@@ -212,7 +228,7 @@ export const MOODS: Mood[] = [
       },
       { text: "The harder you work, the luckier you get.", character: "Ted Lasso" },
     ],
-    gifs: [],
+    media: [],
   },
   {
     id: "hopeful",
@@ -234,7 +250,7 @@ export const MOODS: Mood[] = [
       // specifies pending a fan/transcript check.
       { text: "Small acts of kindness never go unnoticed.", character: "Ted Lasso" },
     ],
-    gifs: [],
+    media: [],
   },
   {
     id: "biscuits",
@@ -255,7 +271,7 @@ export const MOODS: Mood[] = [
       // check.
       { text: "Taking a break is not the same as giving up.", character: "Ted Lasso" },
     ],
-    gifs: [],
+    media: [],
   },
 ];
 

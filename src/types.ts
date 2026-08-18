@@ -1,3 +1,4 @@
+import type { MediaKind } from "./data/moods";
 import type { LastActivity, RecentActivity } from "./domain/activity";
 import type { RouteRender } from "./domain/route";
 
@@ -19,9 +20,12 @@ export interface Snapshot {
   mood: { id: string; name: string; accent: string };
   quote: { text: string; character: string };
   // `verifiedOn` rides along from the catalogue entry (src/data/moods.ts) so
-  // the footer can flag a stale GIF link without re-looking up the catalogue
-  // at render time.
-  gif: { url: string; alt: string; verifiedOn: string } | null;
+  // the footer can flag a stale link without re-looking up the catalogue at
+  // render time. The field name predates non-GIF media and is kept as-is:
+  // renaming it would orphan every snapshot already in KV for no reader-visible
+  // gain. `kind` is optional for the same reason — a snapshot written before it
+  // existed is treated as a gif.
+  gif: { url: string; alt: string; verifiedOn: string; kind?: MediaKind } | null;
   scores: { consistency: number; charge: number };
   reasons: string[];
   facts: PublicFacts;

@@ -63,13 +63,21 @@ describe("mood catalogue", () => {
   it("dates every mood and every gif with an ISO day", () => {
     for (const m of MOODS) {
       expect(m.verifiedOn).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-      for (const g of m.gifs) expect(g.verifiedOn).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      for (const g of m.media) expect(g.verifiedOn).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    }
+  });
+
+  it("declares a known kind for every media entry", () => {
+    for (const m of MOODS) {
+      for (const g of m.media) {
+        expect(["gif", "image", "video"]).toContain(g.kind);
+      }
     }
   });
 
   it("gives every gif an https url and alt text that reads as a sentence", () => {
     for (const m of MOODS) {
-      for (const g of m.gifs) {
+      for (const g of m.media) {
         expect(g.url.startsWith("https://")).toBe(true);
         expect(g.alt.trim().split(/\s+/).length).toBeGreaterThanOrEqual(4);
       }
@@ -101,10 +109,10 @@ describe("mood catalogue", () => {
   // must not also pin how many moods currently have none, or it becomes a
   // regression the day someone sources the rest.
   it("gives every populated mood well-formed GIF entries, and allows some moods to have none", () => {
-    const withGifs = MOODS.filter((m) => m.gifs.length > 0);
+    const withGifs = MOODS.filter((m) => m.media.length > 0);
     expect(withGifs.length).toBeGreaterThan(0);
     for (const m of MOODS) {
-      for (const g of m.gifs) {
+      for (const g of m.media) {
         expect(g.url.startsWith("https://")).toBe(true);
         expect(g.alt.trim().split(/\s+/).length).toBeGreaterThanOrEqual(4);
         expect(g.source.trim().length).toBeGreaterThan(0);

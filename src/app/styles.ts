@@ -224,6 +224,29 @@ body[data-refreshing="true"] .hero { opacity: .35; transition: opacity .35s ease
 }
 .results-out a:hover, .results-out a:focus-visible { text-decoration: underline; }
 
+/* A video stands in for the still: a framed plate the size the image would
+   have been, so the hero's two-column balance survives whichever kind of media
+   the mood happens to carry. */
+.hero-video {
+  display: flex; flex-direction: column; gap: .4rem; justify-content: center;
+  min-height: 8rem; padding: 1.1rem;
+  border: 1px solid var(--rule);
+  border-top: 3px solid var(--ink-accent);
+  color: inherit; text-decoration: none;
+}
+.hero-video-cue {
+  font-family: var(--display); font-weight: 800;
+  font-size: .8rem; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--ink-accent);
+}
+/* The escape below is doubled because this whole stylesheet is a TS template
+   literal: a single backslash would be consumed as a JS escape rather than
+   reaching CSS. The codepoint is the north-east arrow. Note this comment must
+   avoid writing it raw for the same reason. */
+.hero-video-cue::after { content: " \\2197"; }
+.hero-video-alt { color: var(--ink-soft); font-size: .95rem; }
+.hero-video:hover .hero-video-cue, .hero-video:focus-visible .hero-video-cue { text-decoration: underline; }
+
 /* Catalogue sheet. Each mood re-declares --ink-accent locally, so its own ink
    colours its heading and its links without any per-mood CSS being generated. */
 .cat-intro { color: var(--ink-soft); max-width: 42rem; margin: 1.25rem 0 2rem; }
@@ -256,6 +279,11 @@ body[data-refreshing="true"] .hero { opacity: .35; transition: opacity .35s ease
   text-transform: uppercase; color: var(--ink-soft); white-space: nowrap;
 }
 .cat-gifs { margin-top: .9rem; }
+.cat-kind {
+  font-family: var(--display); font-size: .62rem; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--ink-accent);
+  white-space: nowrap; padding-right: .75rem;
+}
 
 /* The imprint line a printed programme carries at the foot of every sheet.
    Heavy top rule to echo the masthead, set in the display face but left
