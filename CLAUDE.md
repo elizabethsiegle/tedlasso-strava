@@ -1,7 +1,8 @@
 # tedlasso-strava
 
 A single-athlete Cloudflare Worker that reads my Strava activity every 4 hours, derives a
-"mood" from it, and serves one Ted Lasso quote + GIF that matches.
+"mood" from it, and serves one passage from Machiavelli plus a piece of public-domain art
+that matches.
 
 ## UI must not look AI-generated
 
@@ -50,9 +51,17 @@ Concretely, on this project:
   access token it came with. A failed refresh must never clear the last good snapshot.
 - The read path (page views) never calls Strava. It reads the KV snapshot only. Only the
   cron and the guarded manual-refresh endpoint may call Strava.
-- Every mood, quote, and GIF lives in the versioned catalogue in `src/data/moods.ts` with a
-  `verifiedOn` date — never hardcoded in rendering or engine logic. Flag GIF links whose
+- Every mood, quote, and image lives in the versioned catalogue in `src/data/moods.ts` with a
+  `verifiedOn` date — never hardcoded in rendering or engine logic. Flag media links whose
   `verifiedOn` is older than 180 days as stale.
+- Quotes must be passages that can actually be pointed at in the text, cited by chapter.
+  Machiavelli is one of the most misquoted authors there is, and the popular fabrications stay
+  out of the catalogue: "the ends justify the means" appears nowhere in The Prince. Use the
+  public-domain translations (Marriott, Ricci). `Quote.character` holds the citation rather
+  than a speaker, and keeps its old field name because snapshots in KV already store it.
+- Mood *ids* are stable engine keys and are deliberately not renamed when the display names
+  change. The engine and its fixture tests select on `preseason`, `roy-kent`, `biscuits` and
+  the rest; only `Mood.name` is the reader-facing label. Do not churn the ids for a rebrand.
 - Never claim a "personal record." We only have 90 days of activity list data, so the honest
   claim is "longest ride in 90 days." Say what we can actually back.
 - The route is drawn over a real basemap, and every tile is proxied through our own

@@ -322,7 +322,7 @@ describe("preview route", () => {
     const res = await worker.fetch(new Request("https://x/?preview=roy-kent"), testEnv(), ctx());
     const html = await res.text();
     expect(res.status).toBe(200);
-    expect(html).toContain("Roy Kent");
+    expect(html).toContain(MOODS.find((m) => m.id === "roy-kent")!.name);
     expect(html.toLowerCase()).toContain("preview");
   });
 

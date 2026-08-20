@@ -1,3 +1,15 @@
+/**
+ * Machiavelli is one of the most misquoted authors there is, so every entry here
+ * is a passage that can actually be pointed at in the text, rendered from the
+ * public-domain translations (Marriott, Ricci), with its chapter cited. The
+ * popular fabrications are deliberately absent: "the ends justify the means"
+ * appears nowhere in The Prince, and it is not going in this file.
+ *
+ * `character` is a citation now rather than a speaker, e.g. "The Prince, ch.
+ * XXV". The field keeps its old name on purpose: snapshots already in KV store
+ * `quote.character`, and renaming it would orphan every one of them for no
+ * reader-visible gain.
+ */
 export interface Quote {
   text: string;
   character: string;
@@ -31,312 +43,291 @@ export interface Mood {
 export const MOODS: Mood[] = [
   {
     id: "preseason",
-    name: "Preseason",
+    name: "Peacetime",
     accent: "#6B7A8F",
-    verifiedOn: "2026-08-14",
+    verifiedOn: "2026-08-20",
     quotes: [
-      { text: "I believe in hope. I believe in believe.", character: "Ted Lasso" },
       {
-        text: "Taking on a challenge is a lot like riding a horse. If you're comfortable while you're doing it, you're probably doing it wrong.",
-        character: "Ted Lasso",
+        text: "A wise prince ought never to lift his thoughts from the exercise of war, and in peace he should occupy himself with it more than in war itself.",
+        character: "The Prince, ch. XIV",
       },
-      { text: "There's two buttons I never like to hit: panic and snooze.", character: "Ted Lasso" },
+      {
+        text: "The Romans did what all wise princes ought to do: they looked not only to present troubles but also to future ones, and provided against them with all diligence.",
+        character: "The Prince, ch. III",
+      },
+      {
+        text: "There is nothing more difficult to take in hand, more perilous to conduct, or more uncertain in its success, than to take the lead in the introduction of a new order of things.",
+        character: "The Prince, ch. VI",
+      },
     ],
     media: [
       {
-        kind: "gif",
-        url: "https://media.giphy.com/media/RzE8jPRlLeEyEB6Dmf/giphy.gif",
-        alt: "Ted Lasso looks nervous and anxious.",
-        source: "Giphy",
-        verifiedOn: "2026-08-16",
+        kind: "image",
+        url: "https://upload.wikimedia.org/wikipedia/commons/7/77/Machiavelli_Principe_Cover_Page.jpg",
+        alt: "The title page of an early printed edition of Il Principe.",
+        source: "Wikimedia Commons, public domain",
+        verifiedOn: "2026-08-20",
       },
     ],
   },
   {
     id: "whered-you-go",
-    name: "Where'd You Go",
+    name: "Neglect",
     accent: "#8C6239",
-    verifiedOn: "2026-08-14",
+    verifiedOn: "2026-08-20",
     quotes: [
       {
-        text: "I feel like we fell out of the lucky tree and hit every branch on the way down.",
-        character: "Ted Lasso",
+        text: "The chief cause of the loss of states is the contempt of this art, and the way to acquire them is to be well versed in it.",
+        character: "The Prince, ch. XIV",
       },
       {
-        text: "You know what the happiest animal in the world is? It's a goldfish. It's got a ten-second memory. Be a goldfish.",
-        character: "Ted Lasso",
+        text: "States that rise quickly, like all things in nature that are born and grow rapidly, cannot have roots and branches, so that the first storm destroys them.",
+        character: "The Prince, ch. VII",
       },
       {
-        text: "I promise you there is something worse out there than being sad, and that's being alone and being sad.",
-        character: "Ted Lasso",
+        text: "He who abandons what is done for what ought to be done sooner brings about his ruin than his preservation.",
+        character: "The Prince, ch. XV",
       },
     ],
     media: [
       {
-        kind: "gif",
-        url: "https://media.giphy.com/media/l1uHfSdEdgHGKxOvcq/giphy.gif",
-        alt: "Ted Lasso looking sad and deflated.",
-        source: "Giphy",
-        verifiedOn: "2026-08-17",
-      },
-      {
-        kind: "gif",
-        url: "https://media.giphy.com/media/FJ9Fdud5b26E8OhgdW/giphy.gif",
-        alt: "Ted Lasso looking lost and unsure.",
-        source: "Giphy",
-        verifiedOn: "2026-08-17",
-      },
-      {
-        kind: "gif",
-        url: "https://media.giphy.com/media/XEVEIm85fGGAQMQpq4/giphy.gif",
-        alt: "A downcast Ted, quiet and sad.",
-        source: "Giphy",
-        verifiedOn: "2026-08-17",
-      },
-      {
-        kind: "gif",
-        url: "https://media.giphy.com/media/W6i8VJICgSn9A5qBqK/giphy.gif",
-        alt: "Ted Lasso waving goodbye to someone.",
-        source: "Giphy",
-        verifiedOn: "2026-08-17",
+        kind: "image",
+        url: "https://upload.wikimedia.org/wikipedia/commons/e/e7/La_morte_di_Niccol%C3%B2_Machiavelli.jpg",
+        alt: "A nineteenth-century painting of the death of Machiavelli.",
+        source: "Wikimedia Commons, public domain",
+        verifiedOn: "2026-08-20",
       },
     ],
   },
   {
     id: "believe",
-    name: "Believe",
-    // Darkened from the original #F2C14E: that pale gold cleared 11:1 against
-    // the dark stock but only 1.49:1 against the light one -- unreadable as
-    // this mood's headline and route-map color. This deeper amber keeps the
-    // same hue/saturation and clears 3:1 (WCAG large-text) against both.
+    name: "Occasione",
     accent: "#9A700B",
-    verifiedOn: "2026-08-14",
+    verifiedOn: "2026-08-20",
     quotes: [
-      { text: "Believe.", character: "AFC Richmond locker room" },
       {
-        text: "It's the lack of hope that comes and gets you. I believe in hope.",
-        character: "Ted Lasso",
+        text: "Without opportunity their powers of mind would have been extinguished, and without those powers the opportunity would have come in vain.",
+        character: "The Prince, ch. VI",
       },
-      { text: "Doing the right thing is never the wrong thing.", character: "Ted Lasso" },
+      {
+        text: "It is better to be impetuous than cautious, for fortune yields sooner to those who press her than to those who proceed coldly.",
+        character: "The Prince, ch. XXV",
+      },
+      {
+        text: "God is not willing to do everything, and thus take away our free will and that share of the glory which belongs to us.",
+        character: "The Prince, ch. XXVI",
+      },
     ],
     media: [
       {
-        kind: "gif",
-        url: "https://media.giphy.com/media/KG9iDKqmrUVXaHrR9q/giphy.gif",
-        alt: "A Ted Lasso Believe sticker.",
-        source: "Giphy",
-        verifiedOn: "2026-08-18",
-      },
-      {
-        kind: "gif",
-        url: "https://media.giphy.com/media/inzHjDkrSktCdw2EGn/giphy.gif",
-        alt: "Ted Lasso saying trust me.",
-        source: "Giphy",
-        verifiedOn: "2026-08-17",
+        kind: "image",
+        url: "https://upload.wikimedia.org/wikipedia/commons/d/d9/Federico_Faruffini_-_Borgia_e_Machiavelli.jpg",
+        alt: "Faruffini's painting of Machiavelli in conference with Cesare Borgia.",
+        source: "Wikimedia Commons, public domain",
+        verifiedOn: "2026-08-20",
       },
     ],
   },
   {
     id: "roy-kent",
-    name: "Roy Kent",
+    name: "Discipline",
     accent: "#B03A2E",
-    verifiedOn: "2026-08-14",
+    verifiedOn: "2026-08-20",
     quotes: [
       {
-        text: "He's here, he's there, he's every-bleeping-where.",
-        character: "Richmond supporters",
+        text: "The lion cannot protect himself from traps, and the fox cannot defend himself from wolves. One must therefore be a fox to recognise traps, and a lion to frighten wolves.",
+        character: "The Prince, ch. XVIII",
       },
-      { text: "I don't want to be lucky. I want to be good.", character: "Roy Kent" },
-      { text: "Be curious, not judgmental.", character: "Ted Lasso" },
+      {
+        text: "Nothing causes a prince to be so much esteemed as great enterprises and setting a fine example.",
+        character: "The Prince, ch. XXI",
+      },
+      {
+        text: "Whoever wishes constant success must change his conduct with the times.",
+        character: "Discourses on Livy, bk. III, ch. 9",
+      },
     ],
     media: [
       {
-        kind: "gif",
-        url: "https://media.giphy.com/media/5erpxvvqEBWBeFhrHa/giphy.gif",
-        alt: "Roy Kent's face flashes with sudden, exasperated frustration.",
-        source: "Giphy",
-        verifiedOn: "2026-08-16",
-      },
-      {
-        kind: "gif",
-        url: "https://media.giphy.com/media/Zod24bq6PTegwxMAcK/giphy.gif",
-        alt: "Roy Kent's scowl conveys blunt irritation.",
-        source: "Giphy",
-        verifiedOn: "2026-08-16",
+        kind: "image",
+        url: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/Machiavelli_-_Mentzel%2C_Johann_Georg.jpg/960px-Machiavelli_-_Mentzel%2C_Johann_Georg.jpg",
+        alt: "An engraved portrait of Machiavelli by Johann Georg Mentzel.",
+        source: "Wikimedia Commons, public domain",
+        verifiedOn: "2026-08-20",
       },
     ],
   },
   {
     id: "comeback-szn",
-    name: "Comeback Szn",
+    name: "Reconquest",
     accent: "#2E7D6B",
-    verifiedOn: "2026-08-14",
+    verifiedOn: "2026-08-20",
     quotes: [
-      { text: "Be a goldfish.", character: "Ted Lasso" },
-      // Corrected from the brief: this is Rebecca Welton quoting a Johan
-      // Cruyff line to Ted before the Man City match (S1E10, "The Hope
-      // That Kills You"); Ted's reply is "Ooh, I like that," not the line
-      // itself.
-      { text: "Every disadvantage has its advantage.", character: "Rebecca Welton" },
       {
-        text: "A good mentor hopes you will move on. A great mentor knows you will.",
-        character: "Leslie Higgins",
+        text: "Provinces that have rebelled and are afterwards recovered are less apt to be lost again, for the ruler takes occasion from the rebellion to secure himself.",
+        character: "The Prince, ch. III",
+      },
+      {
+        text: "Men never do good unless necessity drives them to it.",
+        character: "Discourses on Livy, bk. I, ch. 3",
+      },
+      {
+        text: "Men are much more taken by present things than by those that are past.",
+        character: "The Prince, ch. XXIV",
       },
     ],
     media: [
       {
-        kind: "gif",
-        url: "https://media.giphy.com/media/oxQDaZaJUMNwxbPUx5/giphy.gif",
-        alt: "An animated goldfish illustrates forgetting and moving on quickly.",
-        source: "Giphy",
-        verifiedOn: "2026-08-16",
+        kind: "image",
+        url: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Eugenio_Agneni_-_Le_ombre_dei_grandi_uomini_fiorentini_che_protestano_contro_il_dominio_straniero.jpg/960px-Eugenio_Agneni_-_Le_ombre_dei_grandi_uomini_fiorentini_che_protestano_contro_il_dominio_straniero.jpg",
+        alt: "Agneni's painting of the shades of great Florentines rising in protest.",
+        source: "Wikimedia Commons, public domain",
+        verifiedOn: "2026-08-20",
       },
     ],
   },
   {
     id: "diamond-dogs",
-    name: "Diamond Dogs",
+    name: "The Middle Way",
     accent: "#8A7B4F",
-    verifiedOn: "2026-08-14",
+    verifiedOn: "2026-08-20",
     quotes: [
-      { text: "Barbecue sauce.", character: "Ted Lasso" },
-      { text: "Diamond Dogs, assemble!", character: "Ted Lasso" },
       {
-        text: "If you care about someone, and you got a little love in your heart, there ain't nothing you can't get through together.",
-        character: "Ted Lasso",
+        text: "Very rarely do men know how to be either entirely good or entirely bad.",
+        character: "Discourses on Livy, bk. I, ch. 27",
+      },
+      {
+        text: "In the affairs of state one should never adopt a middle course, for it holds neither the advantages of the one nor the safety of the other.",
+        character: "Discourses on Livy, bk. II, ch. 23",
+      },
+      {
+        text: "Many have imagined republics and principalities that have never been seen or known to exist in reality.",
+        character: "The Prince, ch. XV",
       },
     ],
     media: [
       {
-        kind: "gif",
-        url: "https://media.giphy.com/media/yPK2Mo5zXUF8NsE8gE/giphy.gif",
-        alt: "The Diamond Dogs gather together in a moment of camaraderie.",
-        source: "Giphy",
-        verifiedOn: "2026-08-16",
+        kind: "image",
+        url: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Opere_di_Machiavelli_01.jpg/960px-Opere_di_Machiavelli_01.jpg",
+        alt: "The title page of a collected edition of Machiavelli's works.",
+        source: "Wikimedia Commons, public domain",
+        verifiedOn: "2026-08-20",
       },
     ],
   },
   {
     id: "football-is-life",
-    name: "Football Is Life",
+    name: "Virtù",
     accent: "#1F7A3D",
-    verifiedOn: "2026-08-14",
+    verifiedOn: "2026-08-20",
     quotes: [
-      { text: "Football is life!", character: "Dani Rojas" },
       {
-        text: "I think that you might be so sure that you're one in a million that sometimes you forget that out there you're just one of eleven.",
-        character: "Ted Lasso",
+        text: "Those who become princes by their own ability acquire their dominion with difficulty, but they keep it with ease.",
+        character: "The Prince, ch. VI",
       },
-      // Corrected from the brief: this line is written by journalist Trent
-      // Crimm in his newspaper column (S1E3, "Trent Crimm: The
-      // Independent"), not spoken by Ted.
       {
-        text: "If the Lasso way is wrong, it's hard to imagine being right.",
-        character: "Trent Crimm",
+        text: "He who has relied least upon fortune is established the strongest.",
+        character: "The Prince, ch. VI",
+      },
+      {
+        text: "A prince ought to have no other aim or thought, nor take up any other thing for his study, but war and its organisation and discipline.",
+        character: "The Prince, ch. XIV",
       },
     ],
     media: [
       {
-        kind: "gif",
-        url: "https://media.giphy.com/media/UL3kNMFvmKGXlOD8Qu/giphy.gif",
-        alt: "Dani Rojas cheerfully declares that football is life.",
-        source: "Giphy",
-        verifiedOn: "2026-08-16",
+        kind: "image",
+        url: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/Portrait_of_Niccol%C3%B2_Machiavelli_by_Santi_di_Tito.jpg/960px-Portrait_of_Niccol%C3%B2_Machiavelli_by_Santi_di_Tito.jpg",
+        alt: "Santi di Tito's portrait of Machiavelli, the canonical likeness.",
+        source: "Wikimedia Commons, public domain",
+        verifiedOn: "2026-08-20",
       },
     ],
   },
   {
     id: "gaffer-mode",
-    name: "Gaffer Mode",
-    // Lightened from the original #34495E: that navy cleared 8.23:1 against
-    // the light stock but only 1.99:1 against the dark one. This keeps the
-    // same navy-slate hue and saturation, lifted to clear 3:1 against both.
+    name: "The Fortress",
     accent: "#56799C",
-    verifiedOn: "2026-08-14",
+    verifiedOn: "2026-08-20",
     quotes: [
       {
-        text: "Success is not about the wins and losses. It's about helping these young fellas be the best versions of themselves.",
-        character: "Ted Lasso",
+        text: "It is much safer to be feared than loved, if one of the two must be wanting.",
+        character: "The Prince, ch. XVII",
       },
       {
-        text: "I think things come into our lives to help us get from one place to a better one.",
-        character: "Ted Lasso",
+        text: "The best fortress that exists is to avoid being hated by the people, for though you hold fortresses, they will not save you if the people hate you.",
+        character: "The Prince, ch. XX",
       },
-      { text: "The harder you work, the luckier you get.", character: "Ted Lasso" },
+      {
+        text: "A prince who has a strong city and does not make himself hated cannot be attacked, and anyone who attempts it will be driven off with disgrace.",
+        character: "The Prince, ch. X",
+      },
     ],
     media: [
       {
-        kind: "gif",
-        url: "https://media.giphy.com/media/aCguaqXP2s1qRwvZCn/giphy.gif",
-        alt: "Ted Lasso urging a player on.",
-        source: "Giphy",
-        verifiedOn: "2026-08-17",
-      },
-      {
-        kind: "gif",
-        url: "https://media.giphy.com/media/ui0InHDmrAPg0zbmTJ/giphy.gif",
-        alt: "Ted Lasso asking what are you doing.",
-        source: "Giphy",
-        verifiedOn: "2026-08-17",
+        kind: "image",
+        url: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/Antonio_Maria_Crespi_Castoldi_-_Portrait_of_Niccol%C3%B2_Machiavelli.jpg/960px-Antonio_Maria_Crespi_Castoldi_-_Portrait_of_Niccol%C3%B2_Machiavelli.jpg",
+        alt: "Crespi Castoldi's portrait of Machiavelli.",
+        source: "Wikimedia Commons, public domain",
+        verifiedOn: "2026-08-20",
       },
     ],
   },
   {
     id: "hopeful",
-    name: "Hopeful",
-    // Darkened from the original #C77DBB: that orchid pink cleared 6.23:1
-    // against the dark stock but only 2.63:1 against the light one. Same hue
-    // and saturation, deepened to clear 3:1 against both.
+    name: "Fortuna",
     accent: "#B24DA2",
-    verifiedOn: "2026-08-14",
+    verifiedOn: "2026-08-20",
     quotes: [
-      { text: "I believe in hope. I believe in believe.", character: "Ted Lasso" },
       {
-        text: "You beating yourself up is like Woody Allen playing the clarinet. I don't wanna hear it.",
-        character: "Ted Lasso",
+        text: "Fortune is the arbiter of one half of our actions, and she leaves the other half, or nearly so, to be governed by us.",
+        character: "The Prince, ch. XXV",
       },
-      // Unverified: could not confirm this exact phrasing via search within
-      // the time-box (a related but distinct line, "small acts of kindness
-      // make a championship team," turned up instead). Kept as the brief
-      // specifies pending a fan/transcript check.
-      { text: "Small acts of kindness never go unnoticed.", character: "Ted Lasso" },
+      {
+        text: "When rivers are in flood they carry all before them, yet in quiet times men can make provision with dykes and embankments, so that when the waters rise they are neither so unrestrained nor so damaging.",
+        character: "The Prince, ch. XXV",
+      },
+      {
+        text: "Those who rise by fortune alone have little trouble in rising and much in maintaining themselves, for they have no roots.",
+        character: "The Prince, ch. VII",
+      },
     ],
     media: [
       {
-        kind: "gif",
-        url: "https://media.giphy.com/media/2bbDxqLAyYzd7Z4Pb8/giphy.gif",
-        alt: "The Richmond squad showing solidarity together.",
-        source: "Giphy",
-        verifiedOn: "2026-08-17",
+        kind: "image",
+        url: "https://upload.wikimedia.org/wikipedia/commons/0/0b/Coloured_engraving_after_Stefano_Ussi%27s_Portrait_of_Niccolo_Machiavelli%2C_1894.jpg",
+        alt: "An 1894 coloured engraving after Stefano Ussi's portrait of Machiavelli.",
+        source: "Wikimedia Commons, public domain",
+        verifiedOn: "2026-08-20",
       },
     ],
   },
   {
     id: "biscuits",
-    name: "Biscuits",
-    // Darkened from the original #D98B5F: that terracotta cleared 6.87:1
-    // against the dark stock but only 2.38:1 against the light one. Same hue
-    // and saturation, deepened to clear 3:1 against both.
+    name: "Ozio",
     accent: "#B95F2C",
-    verifiedOn: "2026-08-14",
+    verifiedOn: "2026-08-20",
     quotes: [
-      { text: "Biscuits with the boss.", character: "Ted Lasso" },
       {
-        text: "I always figured that tea was gonna taste like hot brown water. And you know what? I was right.",
-        character: "Ted Lasso",
+        text: "Our princes should not blame fortune for the loss of their states, but their own indolence.",
+        character: "The Prince, ch. XXIV",
       },
-      // Unverified: could not confirm this exact phrasing via search within
-      // the time-box. Kept as the brief specifies pending a fan/transcript
-      // check.
-      { text: "Taking a break is not the same as giving up.", character: "Ted Lasso" },
+      {
+        text: "When a man is content to go on as he has always gone, and the times change against him, he is ruined.",
+        character: "The Prince, ch. XXV",
+      },
+      {
+        text: "Men are always averse to any enterprise in which they foresee difficulty, and no enterprise can be called easy where the outcome is doubtful.",
+        character: "The Prince, ch. VI",
+      },
     ],
     media: [
       {
-        kind: "gif",
-        url: "https://media.giphy.com/media/n424iLDqTlHRrWtkLl/giphy.gif",
-        alt: "Rebecca Welton reacting in her office.",
-        source: "Giphy",
-        verifiedOn: "2026-08-17",
+        kind: "image",
+        url: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Machiavelli_caricature.jpg/960px-Machiavelli_caricature.jpg",
+        alt: "A caricature of Machiavelli.",
+        source: "Wikimedia Commons, public domain",
+        verifiedOn: "2026-08-20",
       },
     ],
   },

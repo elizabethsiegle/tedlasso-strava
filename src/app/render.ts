@@ -592,11 +592,12 @@ export function renderPage(view: PageView): string {
       `<p class="notice">The first fetch hasn't run yet. Once it does, this page fills in on its own.</p>`,
     );
   } else if (snapshot && snapshot.facts.totalActivities === 0) {
-    // Kind copy, not scolding: 90 quiet days is a fact, not a failing, and this
-    // is a Ted Lasso site.
+    // Still not scolding: 90 quiet days is a fact, not a failing. The register
+    // is drier than it was, to sit with the catalogue's new voice, but the rule
+    // is unchanged. Never make the empty state a telling-off.
     notices.push(
-      `<p class="notice">Quiet on the pitch these last 90 days — no activities to report. ` +
-        `That's alright. The door's open whenever you're ready to lace back up.</p>`,
+      `<p class="notice">Ninety days quiet, with no activities to report. ` +
+        `Fortune has had the whole of it. The other half is yours whenever you want it back.</p>`,
     );
   }
 

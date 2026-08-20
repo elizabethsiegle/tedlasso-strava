@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { escapeHtml, renderPage } from "../../src/app/render";
+import { getMood } from "../../src/data/moods";
 import { DAY_MS, TUNING } from "../../src/domain/tuning";
 import { EMPTY_HEALTH, type Health, type Snapshot } from "../../src/types";
 
@@ -131,7 +132,7 @@ describe("renderPage", () => {
 
   it("renders the preseason state when there is no snapshot", () => {
     const html = renderPage(view({ snapshot: null }));
-    expect(html).toContain("Preseason");
+    expect(html).toContain(getMood("preseason")!.name);
     expect(html).toContain("hasn't run yet");
     expect(html).not.toContain("Loading");
   });
@@ -401,7 +402,7 @@ describe("renderPage", () => {
   describe("media kinds", () => {
     it("renders a still image inline, exactly as it renders a gif", () => {
       const still = snapshot({
-        gif: { url: "https://example.test/meme.png", alt: "A Ted Lasso meme still.", verifiedOn: "2026-08-14", kind: "image" },
+        gif: { url: "https://example.test/meme.png", alt: "An engraved portrait still.", verifiedOn: "2026-08-14", kind: "image" },
       });
       const html = renderPage(view({ snapshot: still }));
       expect(html).toContain('<img class="gif" src="https://example.test/meme.png"');

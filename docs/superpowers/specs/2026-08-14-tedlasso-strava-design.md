@@ -591,6 +591,37 @@ Vars: `TIMEZONE` (default `America/Los_Angeles`), `REDIRECT_URI`, `PRIVACY_TRIM_
   `buildRoute` is deliberately not wrapped in a try/catch inside the loop: a non-finite
   `PRIVACY_TRIM_M` is a configuration error and must still throw rather than be swallowed and
   reported as "no route".
+- **Pivoted the catalogue from Ted Lasso to Machiavelli.** 2026-08-20. All 31 quotes replaced
+  with 30 cited passages, and the ten moods renamed: Peacetime, Neglect, Occasione,
+  Discipline, Reconquest, The Middle Way, Virtu, The Fortress, Fortuna, Ozio.
+
+  - **The ids did not change.** `preseason`, `roy-kent`, `biscuits` and the rest are engine
+    keys, and CLAUDE.md treats the mood engine's fixture tests as ground truth. Renaming them
+    would have churned safety-critical code for a content change, so only `Mood.name` moved.
+    The ids remain visible in `?preview=` URLs, which is the accepted cost.
+  - **The accents did not change either.** All ten were contrast-checked to 3:1 against both
+    stocks in an earlier pass, and reusing them keeps that verification valid.
+  - **Citations, not attributions.** `Quote.character` now holds "The Prince, ch. XXV" rather
+    than a speaker. Machiavelli is heavily misquoted, so every entry is a passage that can be
+    pointed at in the text; the popular fabrications are deliberately excluded.
+  - **Media became public-domain art.** The 17 Giphy clips are gone. Each mood carries one
+    still from Wikimedia Commons, all verified public domain and all confirmed to return
+    `200 image/jpeg`: portraits by Santi di Tito and Crespi Castoldi, engravings after Ussi
+    and by Mentzel, Faruffini's Borgia and Machiavelli, Agneni's shades of the Florentines,
+    the Principe title page, and a caricature for Ozio. A Renaissance oil printed on newsprint
+    suits the sheet better than a reaction GIF ever did.
+  - **The empty state changed register but not its rule.** "Quiet on the pitch... the door's
+    open" became "Ninety days quiet... Fortune has had the whole of it. The other half is
+    yours whenever you want it back." Drier, and still not a telling-off. The football framing
+    elsewhere (matchday report, form guide) is kept deliberately: a Renaissance strategist's
+    matchday programme is the joke, not an oversight.
+
+  **Outstanding, and worth stating plainly:** the ten images are fetched by the visitor's
+  browser straight from `upload.wikimedia.org`. That is the same shape of leak the basemap
+  decision refuses for tiles, where every tile is proxied through `/tiles/` so the provider
+  sees one Worker rather than every visitor. The Giphy URLs had the same problem before this
+  change, so it is not a regression, but the tile proxy is the pattern and media should follow
+  it.
 - **Ghost trails deferred.** Overlaying all 90 days of routes was considered and set aside
   for the first build. It needs outlier handling for travel and roughly triples the route
   payload. Revisit once the single-route renderer is proven.

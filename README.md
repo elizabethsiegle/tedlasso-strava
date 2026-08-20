@@ -1,7 +1,8 @@
 # tedlasso-strava
 
 A single-athlete Cloudflare Worker that reads your Strava activity every 4 hours, derives a
-"mood" from it, and serves a matching Ted Lasso quote and GIF on a public page. It is built
+"mood" from it, and serves a matching passage from Machiavelli, with a piece of public-domain
+art, on a public page. It is built
 for one Strava account at a time — there is no multi-user login or account switching.
 
 ## One-time setup

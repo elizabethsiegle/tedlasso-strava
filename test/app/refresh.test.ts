@@ -63,7 +63,7 @@ function rejectingKv(failOn: (key: string) => boolean = () => true): KVNamespace
 async function seedSnapshot(): Promise<Snapshot> {
   const existing: Snapshot = {
     version: 1, refreshedAt: 1, mood: { id: "biscuits", name: "Biscuits", accent: "#D98B5F" },
-    quote: { text: "Biscuits with the boss.", character: "Ted Lasso" }, gif: null,
+    quote: { text: "Fortune is the arbiter of one half of our actions.", character: "The Prince, ch. XXV" }, gif: null,
     scores: { consistency: 1, charge: 1 }, reasons: ["seeded"],
     facts: { last: null, daysSinceLast: null, countLast7: 0, baselineWeekly: 0, streakDays: 0, totalActivities: 0 },
     route: null,

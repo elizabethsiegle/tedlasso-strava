@@ -99,7 +99,7 @@ describe("mood catalogue", () => {
   });
 
   it("resolves a known id and rejects an unknown one", () => {
-    expect(getMood("believe")?.name).toBe("Believe");
+    expect(getMood("believe")?.name).toBe("Occasione");
     expect(getMood("nope")).toBeUndefined();
   });
 
