@@ -72,6 +72,50 @@
   "session_metrics": {
     "turn_count": 1
   },
+  "summary": {
+    "intent": "Improve an unsatisfactory checkpoint by making the map visualization prettier and adding a workout/activity chart with recent workout data beneath it, then commit a proper checkpoint.",
+    "outcome": "Added a weekly workload domain module, extended the snapshot schema and write path, added start/end route terminals to the basemap, built a 'form guide' chart and map plate styling in render.ts, wrote and fixed unit/integration tests (426 passing, coverage above gate), visually verified light and dark renders via headless Chrome screenshots (catching and fixing a label collision bug), updated decision docs, and committed the feature.",
+    "learnings": {
+      "repo": [
+        "Design system is a 'newsprint/matchday programme' aesthetic using --stock/--ink/--ink-accent CSS tokens with Georgia serif + uppercase letterspaced sans.",
+        "The project follows a graph-first workflow (dataviz skill, graph search) before implementing chart/render features.",
+        "Snapshot schema previously had no activity/workout time series — had to be added from scratch (types.ts, refresh.ts write path).",
+        "Repo maintains a spec decision log (docs/superpowers/specs/2026-08-14-tedlasso-strava-design.md) and CLAUDE.md that should be updated when making design decisions.",
+        "Repo has a standing rule against em dashes in code/comments, which the assistant violated inadvertently and had to strip out.",
+        "Test fixtures/snapshots can predate new optional fields (e.g. basemap terminals), so new fields must be made optional for backward compatibility."
+      ],
+      "code": [
+        {
+          "path": "src/domain/basemap.ts",
+          "finding": "Basemap module needed start/end route endpoints added as optional fields so older snapshots without them remain valid; used to show route direction on the map."
+        },
+        {
+          "path": "src/domain/tuning.ts",
+          "finding": "Tuning constants file holds config values like WORKLOAD_WEEKS controlling how many weeks of workout data are bucketed."
+        },
+        {
+          "path": "src/app/render.ts",
+          "finding": "Render layer builds both map plate furniture and the new form-guide chart; SVG rects needed a distinguishing class (form-bar) so test assertions could target actual bar elements instead of matching all rects (including a white-out background rect)."
+        }
+      ],
+      "workflow": [
+        "Establishing a green baseline test run before making changes helps confirm which failures are caused by new work.",
+        "Searching for existing 'strict shape assertion' tests before extending schemas helps avoid breaking exact-match tests unintentionally.",
+        "Rendering an actual preview via esbuild bundling + headless Chrome screenshots (both light and dark themes) surfaced a real visual bug (label collision) that pure unit tests would have missed.",
+        "Headless Chrome can reuse an existing instance/profile causing identical screenshots across theme variants — isolating Chrome profiles per screenshot run fixes this.",
+        "After a visual fix, add a regression test (not just fix and move on) to pin the corrected behavior in the test suite."
+      ]
+    },
+    "friction": [
+      "First screenshot attempt produced identical light/dark images because headless Chrome reused its instance; had to retry with isolated Chrome profiles.",
+      "Lingering headless Chrome processes needed to be manually killed after screenshotting.",
+      "Two test assertions initially collided with unrelated content (inlined CSS containing 'Form guide' text, aria-label containing 'usual'), producing false failures.",
+      "An aria-hidden attribute assertion was written backwards relative to actual markup order and had to be corrected.",
+      "A test assertion counting rects broke when a white-out background rect was added, requiring bars to be given a distinguishing CSS class.",
+      "Four em dashes slipped into new comments and had to be found and removed per the repo's standing style rule."
+    ],
+    "open_items": []
+  },
   "initial_attribution": {
     "calculated_at": "2026-08-20T21:04:35.165502Z",
     "agent_lines": 869,
