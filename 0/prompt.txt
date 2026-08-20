@@ -1,0 +1,17 @@
+yes
+
+---
+
+run the feat/route-basemap branch locally to test
+
+---
+
+i want to see the app running
+
+---
+
+this map is not accurate. the most recent workout is not that.
+
+---
+
+amazing! ok now it says that the ride happened today, but it happened last night (I think it was today EST but we are on PST)
