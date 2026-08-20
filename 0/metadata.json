@@ -35,6 +35,66 @@
   "session_metrics": {
     "turn_count": 7
   },
+  "summary": {
+    "intent": "Push the feat/route-basemap branch, open a PR, run the branch locally end-to-end to visually verify the new street basemap feature, and see the live app with real Strava data.",
+    "outcome": "PR #1 opened and merged into the review flow; feature verified locally via wrangler dev (tiles, BASEMAP=off fallback, dark/light themes) and then deployed to production, revealing a real timezone bug where recent rides were mislabeled 'today' instead of 'yesterday'; the bug was root-caused, fixed with a new calendarDaysBetween helper, covered by 16 new tests, verified against the real production snapshot, and committed locally (not yet pushed/deployed).",
+    "learnings": {
+      "repo": [
+        "Snapshots written before the basemap change have no `basemap` field and the renderer falls back to the bare 1000x1000 abstract path frame.",
+        "`facts.daysSinceLast` is elapsed time (fractional days), not calendar days — never use it for 'today'/'yesterday' prose, only for duration thresholds like DORMANT_DAYS/RECENT_DAYS.",
+        "The mood engine's reason string ('and it was today/yesterday') is baked into the snapshot at refresh time, so a fix to that wording only shows up after the next refresh — unlike the render-time 'When' row which corrects old snapshots immediately.",
+        "wrangler.jsonc holds a PLACEHOLDER_REPLACED_AT_DEPLOY value for the KV namespace id in git; README instructs pasting the real id before deploy, meaning every real deploy requires a manual edit-then-revert dance.",
+        "Pinned wrangler 4.107.0 only supports compatibility_date up to 2026-07-08, but wrangler.jsonc specifies 2026-08-14, so `wrangler dev`/deploy needs an explicit --compatibility-date override; this is pre-existing on main, unrelated to the basemap branch.",
+        "Production REDIRECT_URI is set to http://localhost:8787/auth/callback, which will break Strava reconnect if the token ever lapses.",
+        "Snapshots never store raw/untrimmed coordinates by design (privacy decision), so a deployed snapshot's real polyline can't be reconstructed locally — reproducing real data requires either a real refresh or real credentials."
+      ],
+      "code": [
+        {
+          "path": "src/domain/facts.ts",
+          "line": 116,
+          "finding": "daysSinceLast computed via daysBetween(last.startedAt, nowMs), i.e. pure elapsed-time duration, not calendar-aware."
+        },
+        {
+          "path": "src/app/render.ts",
+          "line": 65,
+          "finding": "Old agoLabel(days) treated any days<1 as 'today' and days<2 as 'yesterday', conflating elapsed time with calendar days; now takes (startedAtMs, nowMs, tz) and computes via calendarDaysBetween."
+        },
+        {
+          "path": "src/domain/mood.ts",
+          "line": 70,
+          "finding": "Second instance of the same elapsed-vs-calendar bug in the 'and it was today/yesterday' reason string; fixed via facts.calendarDaysSinceLast with fallback to Math.floor(days) when absent."
+        },
+        {
+          "path": "src/domain/time.ts",
+          "finding": "Added calendarDaysBetween(fromMs, toMs, tz): rounds difference of startOfDayMs in tz, so DST 23/25-hour days still count as exactly one day."
+        },
+        {
+          "path": "src/domain/activity.ts",
+          "finding": "Facts interface extended with calendarDaysSinceLast (whole calendar days in athlete tz) alongside existing daysSinceLast (elapsed, fractional) — kept as two separate fields deliberately since thresholds need duration and prose needs calendar."
+        }
+      ],
+      "workflow": [
+        "For local verification of a Worker-based app with KV storage, seed local KV via `wrangler kv key put --local`, run `wrangler dev`, and curl/headless-Chrome screenshot the result rather than trusting only the test suite.",
+        "When a deploy requires a secret/id not committed to git (e.g. real KV namespace id), swap it in temporarily via sed, deploy, then restore the placeholder immediately so the reviewed branch stays unchanged.",
+        "Cross-check a suspected timezone bug against real production data (pulled via `wrangler kv key get --remote`) rather than only synthetic fixtures, to confirm root cause before fixing.",
+        "When fixing a bug present in two places (render.ts and mood.ts), factor the shared calendar-day logic into one helper (calendarDaysBetween) instead of duplicating the fix."
+      ]
+    },
+    "friction": [
+      "wrangler dev refused to boot with the committed compatibility_date (2026-08-14) because the pinned wrangler binary (4.107.0) only supports up to 2026-07-08, requiring a manual --compatibility-date override for every local run.",
+      "wrangler.jsonc's KV namespace id is a placeholder in git, so deploying real data required temporarily patching the file and reverting it afterward — a repeated manual step.",
+      "Local KV was empty, so the first 'run it locally' attempt only showed a synthetic/fake route, causing user confusion until clarified that it was a seeded fixture, not real Strava data.",
+      "Two disjoint code paths (render.ts prose and mood.ts reason string) had the same latent timezone bug, requiring a blast-radius check before fixing both.",
+      "Existing tests for the 'When' label and mood reasons were written against the elapsed daysSinceLast number directly, requiring rewrites against real timestamps/timezones rather than simple value tweaks."
+    ],
+    "open_items": [
+      "Timezone fix (commit 07d5533) is committed locally only — not yet pushed to feat/route-basemap or deployed to production; user was asked whether to push/deploy.",
+      "wrangler.jsonc compatibility_date mismatch with pinned wrangler version needs a real fix (bump wrangler or adjust compatibility_date) — flagged as pre-existing and unrelated to this branch.",
+      "Decide on a permanent approach for the KV namespace id in wrangler.jsonc (placeholder vs. real value) instead of manually swapping it on every deploy.",
+      "Production REDIRECT_URI still points to localhost:8787/auth/callback; should be updated to the real domain before the Strava token lapses.",
+      "The mood engine's 'and it was today/yesterday' reason string is baked into snapshots and will only reflect the calendar-day fix after the next refresh/cron run, not immediately on deploy."
+    ]
+  },
   "initial_attribution": {
     "calculated_at": "2026-08-20T18:38:02.452269Z",
     "agent_lines": 216,
