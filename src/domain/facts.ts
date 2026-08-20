@@ -1,5 +1,5 @@
 import type { Activity, Facts, LastActivity, RecentActivity } from "./activity";
-import { addDaysMs, dayKey, daysBetween, startOfDayMs } from "./time";
+import { addDaysMs, calendarDaysBetween, dayKey, daysBetween, startOfDayMs } from "./time";
 import { DAY_MS, TUNING } from "./tuning";
 
 export function median(values: number[]): number {
@@ -124,6 +124,7 @@ export function deriveFacts(activities: Activity[], nowMs: number, tz: string): 
     totalActivities: inWindow.length,
     last: last ? toLastActivity(last) : null,
     daysSinceLast: last ? daysBetween(last.startedAt, nowMs) : null,
+    calendarDaysSinceLast: last ? calendarDaysBetween(last.startedAt, nowMs, tz) : null,
     countLast7: countWithin(7),
     countLast14: countWithin(14),
     countLast28,

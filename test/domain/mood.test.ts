@@ -3,7 +3,7 @@ import type { Facts } from "../../src/domain/activity";
 import { selectMood } from "../../src/domain/mood";
 
 function facts(overrides: Partial<Facts> = {}): Facts {
-  return {
+  const built: Facts = {
     totalActivities: 10,
     last: {
       name: "Evening Run", sportType: "Run", distanceM: 8000,
@@ -20,8 +20,16 @@ function facts(overrides: Partial<Facts> = {}): Facts {
     isFastest90: false,
     recent: [],
     previousGapDays: 3,
+    calendarDaysSinceLast: 4,
     ...overrides,
   };
+  // The two day counts must not contradict each other: unless a test pins the
+  // calendar one deliberately, derive it from whatever elapsed value it used.
+  if (overrides.calendarDaysSinceLast === undefined) {
+    built.calendarDaysSinceLast =
+      built.daysSinceLast === null ? null : Math.floor(built.daysSinceLast);
+  }
+  return built;
 }
 
 const MID = { consistency: 45, charge: 45 };
@@ -57,6 +65,29 @@ describe("override rules, in order", () => {
   it("3. says 'today' when the best happened at zero days out", () => {
     const f = facts({ isLongest90: true, daysSinceLast: 0 });
     expect(selectMood(f, MID).reasons.join(" ")).toContain("today");
+  });
+
+  /**
+   * The wording follows the calendar, the rule follows elapsed time. A 21:44
+   * ride read the next morning is 0.57 elapsed days (so the mood still fires)
+   * but one calendar day ago (so it reads "yesterday", not "today").
+   */
+  it("3. words the best by the calendar while still firing on elapsed time", () => {
+    const f = facts({ isLongest90: true, daysSinceLast: 0.57, calendarDaysSinceLast: 1 });
+    const selection = selectMood(f, MID);
+    expect(selection.moodId).toBe("believe");
+    expect(selection.reasons.join(" ")).toContain("and it was yesterday");
+    expect(selection.reasons.join(" ")).not.toContain("and it was today");
+  });
+
+  it("3. names the calendar day count beyond yesterday", () => {
+    const f = facts({ isLongest90: true, daysSinceLast: 1.9, calendarDaysSinceLast: 2 });
+    expect(selectMood(f, MID).reasons.join(" ")).toContain("and it was 2 days ago");
+  });
+
+  it("3. falls back to elapsed days if a snapshot has no calendar count", () => {
+    const f = facts({ isLongest90: true, daysSinceLast: 1.9, calendarDaysSinceLast: null });
+    expect(selectMood(f, MID).reasons.join(" ")).toContain("and it was yesterday");
   });
 
   it("4. a five-day streak", () => {

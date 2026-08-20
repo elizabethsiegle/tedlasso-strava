@@ -1,6 +1,7 @@
 import type { MediaKind } from "./data/moods";
 import type { LastActivity, RecentActivity } from "./domain/activity";
 import type { RouteRender } from "./domain/route";
+import type { Workload } from "./domain/workload";
 
 export interface PublicFacts {
   last: LastActivity | null;
@@ -30,6 +31,10 @@ export interface Snapshot {
   reasons: string[];
   facts: PublicFacts;
   route: RouteRender | null;
+  // Optional, not just nullable: snapshots written before the chart existed
+  // have no `workload` key at all, and the renderer has to survive reading
+  // one of those straight out of KV.
+  workload?: Workload | null;
 }
 
 export interface Health {
