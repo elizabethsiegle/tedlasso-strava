@@ -68,6 +68,46 @@
   "session_metrics": {
     "turn_count": 4
   },
+  "summary": {
+    "intent": "First, verify a Strava map-rendering fix (route follows newest activity trace) using seeded fixture data via wrangler dev; then pivot the app's mood-quote catalogue from Ted Lasso quotes/GIFs to cited, historically accurate Machiavelli passages and public-domain images.",
+    "outcome": "Confirmed the map fix visually with a seeded ride/tennis snapshot, then fully replaced the Ted Lasso catalogue with 10 renamed moods backed by cited Machiavelli passages and 10 verified public-domain Wikimedia images, updated dependent copy/tests/docs, fixed a media-selection bug, restored a dropped accent, and pushed the work as feat/machiavelli-catalogue (460 tests passing, 99.4%/96.9% coverage).",
+    "learnings": {
+      "repo": [
+        "`npm run dev` fails due to a wrangler compatibility-date mismatch; the working command is `npx wrangler dev --test-scheduled --compatibility-date=2026-07-08`",
+        "Mood catalogue (`src/data/moods.ts`) is treated as the versioned source of truth for content; mood `id`s are engine keys read by selection logic and pinned by tests, while `Mood.name` is the only reader-facing label",
+        "Catalogue tests require ≥3 quotes per mood and previously pinned exact display names like `getMood(\"believe\")?.name`, causing churn on any rename",
+        "`Quote.character` field stores citation text now but can't be renamed because snapshots already persisted in KV reference `quote.character`",
+        "Accent colors per mood were contrast-verified (3:1) against both stocks in an earlier pass and must be reused as-is to keep that verification valid",
+        "Home page mood name is stored in the KV snapshot at seed time, so a source fix (e.g., accent restoration) won't show until re-seeding",
+        "All non-tile external media (Giphy previously, now Wikimedia images) is fetched directly by the visitor's browser rather than proxied, unlike the established `/tiles/` proxy pattern for map tiles"
+      ],
+      "code": [
+        {
+          "path": "src/app/catalogue.ts",
+          "finding": "pickQuote returns a field named `media`, not `gif`; a seeding script assuming `gif` will silently show `media: none`"
+        }
+      ],
+      "workflow": [
+        "Before large content pivots, read the underlying data structure and selection logic first to understand semantic mapping before proposing replacement content",
+        "Verify external asset URLs (public-domain image links) resolve with real HTTP checks before writing them into source, rather than guessing/trusting search results",
+        "When renaming pinned test assertions, prefer having tests read from the catalogue/source of truth dynamically instead of hardcoding values, to avoid repeated churn on future renames",
+        "Log significant content/scope decisions into CLAUDE.md so they persist across sessions (e.g., the rule that only chapter-citable Machiavelli passages are used)"
+      ]
+    },
+    "friction": [
+      "`npm run dev` / `npm wrangler run dev` typo and the underlying compatibility-date mismatch repeatedly blocks the simple dev-server start command",
+      "Generic Wikimedia Commons search for Machiavelli images was noisy; had to pull directly from the dedicated Commons category instead",
+      "Seeding script bug (`gif` vs `media` field mismatch) caused a silent failure (media showing as none) that required re-checking `pickQuote`",
+      "Accent restoration didn't visibly take effect until re-seeding, because mood name was baked into the already-seeded KV snapshot",
+      "A stray pre-existing em dash was found on a line already being touched, requiring an extra cleanup pass per the project's rule"
+    ],
+    "open_items": [
+      "Compatibility-date mismatch in wrangler.jsonc not yet fixed (offered: bump `compatibility_date` to 2026-07-08 or upgrade wrangler to 4.125.0); user hadn't responded before the pivot",
+      "Wikimedia image fetches happen directly from visitor browsers to `upload.wikimedia.org`; a `/media/` proxy analogous to `/tiles/` was proposed but not yet built",
+      "User has not confirmed whether real Strava credentials/`.dev.vars` will be provided to replace the constructed fixture data",
+      "Open question left for the user on whether to soften the retained football framing in copy given the Machiavelli pivot"
+    ]
+  },
   "initial_attribution": {
     "calculated_at": "2026-08-20T22:58:36.068568Z",
     "agent_lines": 233,
