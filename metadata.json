@@ -1,0 +1,40 @@
+{
+  "cli_version": "0.10.1",
+  "checkpoint_id": "01M0G0WDKY2G7V3Z43SD3J221C",
+  "strategy": "manual-commit",
+  "branch": "feat/route-basemap",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "CLAUDE.md",
+    "README.md",
+    "docs/superpowers/specs/2026-08-14-tedlasso-strava-design.md",
+    "src/app/render.ts",
+    "src/app/styles.ts",
+    "src/app/tiles.ts",
+    "src/domain/basemap.ts",
+    "src/domain/route.ts",
+    "src/domain/tuning.ts",
+    "src/worker.ts",
+    "test/app/route-render.test.ts",
+    "test/app/routes.test.ts",
+    "test/app/tiles.test.ts",
+    "test/domain/basemap.test.ts",
+    "wrangler.jsonc"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 178,
+    "cache_creation_tokens": 179491,
+    "cache_read_tokens": 12369078,
+    "output_tokens": 79922,
+    "api_call_count": 89
+  }
+}
