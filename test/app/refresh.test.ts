@@ -229,6 +229,63 @@ describe("runRefresh", () => {
     expect(snap!.route!.pathD.startsWith("M")).toBe(true);
   });
 
+  it("keeps the map on the page when the newest activity has no GPS trace", async () => {
+    // The real case that broke this: a bike ride, then tennis on top. Tennis
+    // carries no polyline, and taking only the newest activity meant one indoor
+    // session hid the map completely.
+    const tennis = {
+      ...ACTIVITY, id: 501, name: "Tennis with Roy", sport_type: "Tennis",
+      distance: 0, moving_time: 5400, total_elevation_gain: 0,
+      start_date: "2026-08-14T16:00:00Z", map: { summary_polyline: null },
+    };
+    const ride = {
+      ...ACTIVITY, id: 502, name: "Headlands loop", sport_type: "Ride",
+      distance: 41_200, moving_time: 7020, total_elevation_gain: 620,
+      start_date: "2026-08-13T15:00:00Z",
+    };
+
+    await new KvStore(kv()).putRefreshToken("ref-old");
+    await runRefresh(deps(happyClient([tennis, ride]), 0), NOW);
+    const snap = await new KvStore(kv()).getSnapshot();
+
+    expect(snap!.route).not.toBeNull();
+    // The ride's trace, not the tennis session's absence of one.
+    expect(snap!.route!.sportType).toBe("Ride");
+    expect(snap!.route!.startedAt).toBe(Date.parse("2026-08-13T15:00:00Z"));
+    // And the receipts still report the genuinely most recent activity.
+    expect(snap!.facts.last!.sportType).toBe("Tennis");
+  });
+
+  it("prefers the newest trace when several activities have one", async () => {
+    const older = { ...ACTIVITY, id: 601, start_date: "2026-08-10T15:00:00Z" };
+    const newer = { ...ACTIVITY, id: 602, start_date: "2026-08-14T15:00:00Z" };
+    await new KvStore(kv()).putRefreshToken("ref-old");
+    await runRefresh(deps(happyClient([older, newer]), 0), NOW);
+    const snap = await new KvStore(kv()).getSnapshot();
+    expect(snap!.route!.startedAt).toBe(Date.parse("2026-08-14T15:00:00Z"));
+  });
+
+  it("has no route at all when nothing in the window carries a trace", async () => {
+    const indoor = [
+      { ...ACTIVITY, id: 701, sport_type: "Tennis", map: { summary_polyline: null } },
+      { ...ACTIVITY, id: 702, sport_type: "WeightTraining", map: {} },
+    ];
+    await new KvStore(kv()).putRefreshToken("ref-old");
+    await runRefresh(deps(happyClient(indoor), 0), NOW);
+    const snap = await new KvStore(kv()).getSnapshot();
+    expect(snap!.route).toBeNull();
+  });
+
+  it("still throws on a non-finite trim rather than reporting no route", async () => {
+    // The picker walks the activity list, so the guard had to survive being
+    // called inside a loop instead of once.
+    await new KvStore(kv()).putRefreshToken("ref-old");
+    const result = await runRefresh(deps(happyClient(), Number.NaN), NOW);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toBe("error");
+    expect(await new KvStore(kv()).getSnapshot()).toBeNull();
+  });
+
   it("drops the route entirely when the trim consumes it", async () => {
     await new KvStore(kv()).putRefreshToken("ref-old");
     await runRefresh(deps(happyClient(), 250), NOW);

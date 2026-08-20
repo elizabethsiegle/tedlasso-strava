@@ -72,6 +72,12 @@ Concretely, on this project:
   already cleared for publication. It does change what the published part reveals, though: a
   shape on paper is anonymous, and the same shape over a street map is an address. If that
   trade is ever unwanted, `BASEMAP=off` drops the tiles and keeps the route.
+- The map shows the most recent activity that actually has a GPS trace, not simply the most
+  recent activity. Tennis, the gym, a treadmill and a pool swim carry no polyline, and taking
+  only the newest activity meant one indoor session hid the map entirely while a mappable ride
+  sat right behind it. Because the figure is therefore not always the athlete's latest
+  workout, `RouteRender.startedAt` rides along and the caption always dates it. Never drop
+  that date: without it the map silently implies the last thing they did was this ride.
 - The form guide under the map is one measure on one axis: weekly moving time, in hours.
   Never give it a second y-scale. Session count and distance belong in the column hover
   titles and the table beneath the figure, never as a second series. The columns are ink and

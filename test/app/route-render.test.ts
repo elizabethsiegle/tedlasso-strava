@@ -223,6 +223,33 @@ describe("basemap under the route", () => {
   });
 });
 
+describe("when the mapped route happened", () => {
+  it("dates the figure, so it cannot imply the last workout was this one", () => {
+    // 26 hours back, read in UTC (the view sets no tz), is yesterday.
+    const dated = { ...ROUTE, startedAt: NOW - 26 * 3_600_000 };
+    const html = renderPage(view(snapshot(dated)));
+    const caption = html.slice(html.indexOf('class="route-caption"'));
+    expect(caption.slice(0, caption.indexOf("</div>"))).toContain("yesterday");
+  });
+
+  it("says nothing about the date on a snapshot written before routes carried one", () => {
+    const html = renderPage(view(snapshot(ROUTE)));
+    const caption = html.slice(html.indexOf('class="route-caption"'));
+    const block = caption.slice(0, caption.indexOf("</div>"));
+    expect(block).not.toContain("yesterday");
+    expect(block).not.toContain("days ago");
+    // The rest of the caption still prints.
+    expect(block).toContain("24.3 km");
+  });
+
+  it("ignores a hand-edited date rather than printing a nonsense age", () => {
+    const hostile = { ...ROUTE, startedAt: "last tuesday" } as unknown as Snapshot["route"];
+    const html = renderPage(view(snapshot(hostile)));
+    expect(html).not.toContain("NaN");
+    expect(html.toLowerCase()).not.toContain("undefined");
+  });
+});
+
 describe("the printed plate around the map", () => {
   const WITH_ENDS = {
     ...ROUTE,

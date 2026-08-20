@@ -109,6 +109,14 @@ export interface RouteRender {
   sportType: string;
   locationLabel: string | null;
   /**
+   * When the activity this route came from started, epoch ms.
+   *
+   * The map is no longer guaranteed to be the newest activity (see the picker in
+   * refresh.ts), so the caption has to be able to say when it was. Optional
+   * because snapshots written before that change have no such field.
+   */
+  startedAt?: number;
+  /**
    * Tile-aligned geometry for the same route, drawn over a real street map.
    * Optional, not required: snapshots written before the basemap existed have
    * no such field, and the renderer falls back to the bare `pathD` frame. Its
@@ -273,6 +281,7 @@ export function buildRoute(activity: Activity, trimM: number): RouteRender | nul
   return {
     pathD,
     viewBox,
+    startedAt: activity.startedAt,
     // Built from the redacted segments, never the raw decode, so the write-path
     // privacy rule still holds: nothing untrimmed is persisted.
     basemap: buildBasemap(simplifiedSegments),

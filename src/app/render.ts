@@ -299,6 +299,8 @@ function mapFrame(basemap: BasemapRender, label: string): string {
 export function renderRoute(
   route: RouteRender | null,
   snapshot: Snapshot,
+  nowMs: number,
+  tz: string,
   showBasemap = true,
 ): string {
   if (!route) {
@@ -313,6 +315,16 @@ export function renderRoute(
   const place = route.locationLabel
     ? `<span class="route-place">${escapeHtml(route.locationLabel)}</span>`
     : "";
+
+  // The map is the newest activity that had a trace, which is not always the
+  // newest activity (an indoor session has none). Saying when it was is what
+  // keeps the figure from implying the athlete's last workout was this ride.
+  // Absent on snapshots written before the route carried a date.
+  const startedAt =
+    typeof route.startedAt === "number" && Number.isFinite(route.startedAt)
+      ? route.startedAt
+      : null;
+  const when = startedAt === null ? "" : `<span>${escapeHtml(agoLabel(startedAt, nowMs, tz))}</span>`;
 
   const basemap = showBasemap ? route.basemap : null;
   const where = route.locationLabel ? `, on a street map of ${route.locationLabel}` : ", on a street map";
@@ -340,6 +352,7 @@ export function renderRoute(
       <span>${km(route.distanceM)} km</span>
       <span>${Math.round(route.elevationM)} m up</span>
       <span>${escapeHtml(route.sportType)}</span>
+      ${when}
       ${place}
       ${credit}
     </div>
@@ -655,7 +668,7 @@ export function renderPage(view: PageView): string {
   </section>
 
   <hr class="rule">
-  ${snapshot ? renderRoute(snapshot.route, snapshot, showBasemap) : ""}
+  ${snapshot ? renderRoute(snapshot.route, snapshot, nowMs, tz, showBasemap) : ""}
   ${snapshot ? renderWorkload(snapshot.workload, tz) : ""}
   ${snapshot ? receipts(snapshot, nowMs, tz) : ""}
   ${snapshot ? results(snapshot) : ""}

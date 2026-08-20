@@ -74,9 +74,24 @@ export async function runRefresh(deps: RefreshDeps, nowMs: number): Promise<Refr
     const { quote, media } = pickQuote(mood, nowMs);
 
     // buildRoute needs the full Activity (it carries the polyline); Facts.last
-    // is a trimmed projection that does not. Sort the raw activities ourselves
-    // and take the most recent one.
-    const lastActivity = [...activities].sort((a, b) => b.startedAt - a.startedAt)[0];
+    // is a trimmed projection that does not. So sort the raw activities here.
+    const newestFirst = [...activities].sort((a, b) => b.startedAt - a.startedAt);
+
+    // The map needs a trace, and the newest activity often has none: tennis, the
+    // gym, a treadmill, a pool swim. Taking only the newest meant one indoor
+    // session hid the map completely, with a perfectly good ride sitting right
+    // behind it. So walk back to the most recent activity that does have one.
+    // `startedAt` rides along on the RouteRender so the caption can say when it
+    // was, rather than implying it was the latest thing the athlete did.
+    //
+    // buildRoute is deliberately not wrapped: a non-finite privacyTrimM is a
+    // configuration error and must still throw rather than be swallowed here and
+    // silently reported as "no route".
+    let route = null;
+    for (const candidate of newestFirst) {
+      route = buildRoute(candidate, privacyTrimM);
+      if (route) break;
+    }
 
     // Same reason as above, for the results table's row thumbnails: the glyph
     // needs the polyline, which only the raw Activity carries. Trimming happens
@@ -106,7 +121,7 @@ export async function runRefresh(deps: RefreshDeps, nowMs: number): Promise<Refr
         totalActivities: facts.totalActivities,
         recent,
       },
-      route: lastActivity ? buildRoute(lastActivity, privacyTrimM) : null,
+      route,
       // Built from the same fetched list the facts came from, so the chart and
       // the receipts can never disagree about a week.
       workload: buildWorkload(activities, nowMs, tz),

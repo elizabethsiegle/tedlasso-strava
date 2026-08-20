@@ -288,7 +288,9 @@ contain best-effort data, so the defensible claim is "longest ride in 90 days".
 nullable) plus `start_latlng` / `end_latlng`. This is in the activity-list response we
 already fetch, so the map costs **zero additional API calls**.
 
-The last activity's route is drawn as an inline SVG path in the mood's accent color. There is
+The route of the most recent activity that has a GPS trace is drawn as an inline SVG path in
+the mood's accent color (revised 2026-08-20: this was the last activity's route, which
+disappeared whenever that activity was indoors; see the decision log). There is
 no base map, no tile provider, no API key, and no client-side JavaScript.
 
 The whole pipeline is pure and runs in `src/domain/route.ts`:
@@ -420,7 +422,7 @@ Anatomy, top to bottom:
 2. The quote — by a wide margin the largest element on the page — with the character's name
    beneath in small caps.
 3. The GIF, beside the quote on wide screens and beneath it on narrow, bordered in the accent.
-4. The route map: an inline SVG of the last activity's path, stroked in the mood accent on
+4. The route map: an inline SVG of the newest traced activity's path, dated in its caption, stroked in the mood accent on
    the newsprint background, in a ruled frame with a caption of distance, elevation, and
    sport. No base map, no tiles, no JavaScript. Falls back to the designed no-route block for
    indoor and manual activities.
@@ -570,6 +572,25 @@ Vars: `TIMEZONE` (default `America/Los_Angeles`), `REDIRECT_URI`, `PRIVACY_TRIM_
   the ends of the *trimmed* geometry, so they add direction to the figure without publishing a
   metre more than the path already draws. A loop lands both on the same point and the ring
   wins, which is the honest reading of a route that came back to where it started.
+- **The map follows the newest *trace*, not the newest activity.** Added 2026-08-20, from a
+  real report: the athlete's last two workouts were a bike ride and then tennis, and the map
+  vanished. `snapshot.route` was built from the single most recent activity, and `buildRoute`
+  returns null with no polyline, so one indoor session replaced the whole figure with the
+  no-route fallback while a 41 km ride sat one row behind it in the same snapshot.
+
+  The picker in `refresh.ts` now walks the activity list newest-first and takes the first
+  activity that yields a route. Two consequences worth keeping straight:
+
+  - The map is no longer necessarily the athlete's latest workout, so `RouteRender.startedAt`
+    rides along and the caption always dates the figure ("41.2 km, 620 m up, Ride,
+    yesterday"). Without that date the map would quietly assert something false.
+  - The receipts are unchanged and still report the genuinely most recent activity, tennis
+    included. The two blocks are allowed to disagree because they are answering different
+    questions, and the caption's date is what makes that legible rather than confusing.
+
+  `buildRoute` is deliberately not wrapped in a try/catch inside the loop: a non-finite
+  `PRIVACY_TRIM_M` is a configuration error and must still throw rather than be swallowed and
+  reported as "no route".
 - **Ghost trails deferred.** Overlaying all 90 days of routes was considered and set aside
   for the first build. It needs outlier handling for travel and roughly triples the route
   payload. Revisit once the single-route renderer is proven.
