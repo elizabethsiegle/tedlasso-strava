@@ -18,6 +18,39 @@
     "output_tokens": 20923,
     "api_call_count": 29
   },
+  "summary": {
+    "intent": "Prepare a live demo of `entire search` and `entire checkpoint explain`, first by finding search queries that would produce compelling hits, then by diagnosing why `entire search` showed no checkpoints and getting a real checkpoint created and indexed.",
+    "outcome": "Verified a tiered list of demo-ready search queries and the exact search-to-explain flow that works, identified that the demo must run from the nested `tedlasso-strava/` repo (not the parent `tedlasso-strava2.0`), diagnosed that checkpoints render as commit/session rows rather than a distinct type (a labeling gap, not missing data), found the parent repo's 5 checkpoints never reached origin due to unrelated history, and began committing uncommitted tooling config files in the nested repo to produce a new pushable checkpoint.",
+    "learnings": {
+      "repo": [
+        "Demo/queries must be run from the nested `tedlasso-strava/` repo, not the parent `tedlasso-strava2.0` — checkpoints from the parent are not indexed on origin.",
+        "`entire checkpoint explain` only resolves checkpoints that have been fetched/pushed for the current branch; e.g. main-branch commit `4515e5cf` fails with `checkpoint not found` because it isn't fetched locally. Only checkpoints on `feat/route-basemap` resolve locally.",
+        "The parent repo (`tedlasso-strava2.0`) has 5 local checkpoint refs but 0 on origin, and its `main` has no upstream configured and shares no commit history with origin `gh/elizabethsiegle/tedlasso-strava` — pushing would be an unrelated-histories push.",
+        "The nested repo has 2 checkpoint refs, both in sync with origin, and is correctly wired to the current session (registered as 'active' with 0 checkpoints in that worktree).",
+        "A checkpoint tied to a commit renders in search results as a commit row and a session row with identical scores (e.g. both 17.91), not as a separate checkpoint-type row — `counts.checkpoints` can be nonzero even though no row in the results list is a checkpoint ULID.",
+        "Infra-flavored query phrasing (e.g. 'cold path failover tests', 'KV outage failover', 'rate limit 429 backoff') pulls mostly commit hits or nothing; the semantically rich session hits are concentrated around the map/timezone feature work.",
+        "Both tested checkpoint `explain` outputs currently show 'Summary: Not generated yet' until `--generate` is run explicitly.",
+        "Nested repo had 4 uncommitted tooling files (`.claude/settings.json`, `.codex/hooks.json`, `.entire/settings.json`, `.entire/.gitignore`) with precedent from a prior commit `1f0f1a72 chore: enable Entire tracking`."
+      ],
+      "code": [],
+      "workflow": [
+        "When prepping a live tool demo, test candidate queries against the real index first rather than guessing — several intuitive demo queries (infra-jargon phrasing) turned out weak or empty.",
+        "Semantic (non-literal) queries phrased like a human bug report (e.g. 'why does the run say yesterday') make the strongest 'not just grep' demo moments since they have zero literal overlap with the source but return a single precise session+commit hit.",
+        "Before committing tooling config files ahead of a push to a remote, inspect contents for secrets even when filenames look innocuous.",
+        "Asked the user for explicit confirmation before pushing to a remote (touches shared state) via AskUserQuestion, per commit/push safety norms."
+      ]
+    },
+    "friction": [
+      "`entire search` showed no distinct checkpoint rows even though checkpoints were indexed, because checkpoints are folded into commit/session rows — required significant digging to determine this was a labeling gap rather than a data-missing bug.",
+      "Confusing cross-repo behavior: identical `entire checkpoint explain` commands work in the nested repo but fail with 'no checkpoint or commit found' in the parent repo, which would have surprised the user mid-demo.",
+      "Parent repo's checkpoints are effectively stranded (unrelated git history with origin), discovered only after checking remotes, upstream config, and shared history."
+    ],
+    "open_items": [
+      "Run `entire checkpoint explain --generate` for the two checkpoints with unpopulated summaries before presenting.",
+      "Mention `--compact` mode, interactive table default, and inline filters (`author:`, `date:`, `repo:`) during the demo if time allows.",
+      "Finish committing and pushing the nested-repo tooling config changes to create and index a real checkpoint for the live demo (in progress, pending user's prior go-ahead)."
+    ]
+  },
   "prompt_attributions": [
     {
       "checkpoint_number": 1,
