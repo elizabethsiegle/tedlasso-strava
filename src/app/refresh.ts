@@ -5,6 +5,7 @@ import { selectMood } from "../domain/mood";
 import { pickQuote } from "../domain/quote";
 import { buildRoute } from "../domain/route";
 import { DAY_MS, TUNING } from "../domain/tuning";
+import { buildWorkload } from "../domain/workload";
 import type { KvStore } from "../infrastructure/store/kv";
 import {
   StravaAuthError,
@@ -106,6 +107,9 @@ export async function runRefresh(deps: RefreshDeps, nowMs: number): Promise<Refr
         recent,
       },
       route: lastActivity ? buildRoute(lastActivity, privacyTrimM) : null,
+      // Built from the same fetched list the facts came from, so the chart and
+      // the receipts can never disagree about a week.
+      workload: buildWorkload(activities, nowMs, tz),
     };
 
     await store.putSnapshot(snapshot);

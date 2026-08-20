@@ -64,3 +64,19 @@ export function addDaysMs(epochMs: number, days: number, tz: string): number {
 export function daysBetween(fromMs: number, toMs: number): number {
   return (toMs - fromMs) / DAY_MS;
 }
+
+/**
+ * Whole calendar days between two instants, counted in `tz`, not elapsed time.
+ *
+ * "Today" and "yesterday" are calendar words: a 21:44 ride is yesterday by
+ * lunchtime even though only 13 hours have passed, and `daysBetween` would
+ * still call that 0.57 days. The timezone is load-bearing rather than
+ * decorative: a night ride in Pacific time has already rolled over into the
+ * next UTC day, so counting in UTC gets the same answer wrong.
+ *
+ * Rounds the gap between the two local midnights, so a DST transition day
+ * (23 or 25 hours long) still counts as one day.
+ */
+export function calendarDaysBetween(fromMs: number, toMs: number, tz: string): number {
+  return Math.round((startOfDayMs(toMs, tz) - startOfDayMs(fromMs, tz)) / DAY_MS);
+}

@@ -2,6 +2,7 @@ import { handleCallback, handleLogin, hasSetupKey, type AuthDeps } from "./app/a
 import { renderCatalogue } from "./app/catalogue";
 import { renderPage } from "./app/render";
 import { runRefresh } from "./app/refresh";
+import { handleTile } from "./app/tiles";
 import { getMood, type Mood } from "./data/moods";
 import { pickQuote } from "./domain/quote";
 import { TUNING } from "./domain/tuning";
@@ -45,6 +46,8 @@ export interface Env {
   STRAVA_CLIENT_SECRET: string;
   STRAVA_ATHLETE_ID: string;
   SETUP_KEY: string;
+  /** "off" hides the basemap under the route. Anything else (or unset) shows it. */
+  BASEMAP?: string;
 }
 
 /**
@@ -77,6 +80,15 @@ export function resolvePrivacyTrim(raw: string | undefined): number {
   const n = Number(trimmed);
   if (Number.isFinite(n) && n < 0) return n;
   return Number.isFinite(n) && n > 0 ? n : TUNING.DEFAULT_PRIVACY_TRIM_M;
+}
+
+/**
+ * The basemap is opt-out, not opt-in: it is on unless someone deliberately
+ * turns it off. Read at render time rather than baked into the snapshot, so
+ * flipping it takes effect on the next page view instead of the next fetch.
+ */
+export function resolveBasemap(raw: string | undefined): boolean {
+  return (raw ?? "").trim().toLowerCase() !== "off";
 }
 
 function buildDeps(env: Env): AuthDeps {
@@ -160,9 +172,13 @@ async function handleManualRefresh(request: Request, env: Env, nowMs: number): P
 }
 
 export default {
-  async fetch(request: Request, env: Env, _ctx: ExecutionContext): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     const nowMs = Date.now();
+
+    // Checked before the cheap equality routes below because tiles are the
+    // only path with a variable shape, and there are a dozen of them per view.
+    if (url.pathname.startsWith("/tiles/")) return handleTile(request, ctx);
 
     if (url.pathname === "/auth/login") return handleLogin(request, buildDeps(env));
     if (url.pathname === "/auth/callback") return handleCallback(request, buildDeps(env), nowMs);
@@ -206,6 +222,8 @@ export default {
           showRefreshButton: hasSetupKey(request, env.SETUP_KEY),
           previewNotice,
           setupKey: env.SETUP_KEY,
+          showBasemap: resolveBasemap(env.BASEMAP),
+          tz: env.TIMEZONE || "UTC",
         }),
         { headers: { "content-type": "text/html; charset=utf-8" } },
       );

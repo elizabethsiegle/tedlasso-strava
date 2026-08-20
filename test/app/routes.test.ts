@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import worker, { resolvePrivacyTrim } from "../../src/worker";
+import worker, { resolveBasemap, resolvePrivacyTrim } from "../../src/worker";
 import { KvStore } from "../../src/infrastructure/store/kv";
 import { TUNING } from "../../src/domain/tuning";
 import { buildRoute } from "../../src/domain/route";
@@ -42,6 +42,53 @@ function kvThatFailsOn(failingKey: string): KVNamespace {
     delete: async () => {},
   } as unknown as KVNamespace;
 }
+
+describe("resolveBasemap", () => {
+  it("is on by default, including when the var is missing entirely", () => {
+    expect(resolveBasemap(undefined)).toBe(true);
+    expect(resolveBasemap("")).toBe(true);
+    expect(resolveBasemap("on")).toBe(true);
+  });
+
+  it("is off only for the documented literal, in any casing", () => {
+    expect(resolveBasemap("off")).toBe(false);
+    expect(resolveBasemap("OFF")).toBe(false);
+    expect(resolveBasemap(" off \n")).toBe(false);
+  });
+
+  it("does not read other falsy-looking spellings as off", () => {
+    // Unlike PRIVACY_TRIM_M, guessing wrong here is a cosmetic change, not a
+    // privacy leak, so the rule is simply "one documented word".
+    for (const raw of ["false", "0", "no", "none"]) {
+      expect(resolveBasemap(raw), raw).toBe(true);
+    }
+  });
+});
+
+describe("tile route", () => {
+  it("404s a tile outside the zoom range without going upstream", async () => {
+    const res = await worker.fetch(new Request("https://example.test/tiles/20/1/1.png"), testEnv(), ctx());
+    expect(res.status).toBe(404);
+  });
+
+  it("404s a path that only looks like a tile", async () => {
+    const res = await worker.fetch(
+      new Request("https://example.test/tiles/14/2620/6333.png/../../secret"),
+      testEnv(),
+      ctx(),
+    );
+    expect(res.status).toBe(404);
+  });
+
+  it("rejects a write to the tile proxy", async () => {
+    const res = await worker.fetch(
+      new Request("https://example.test/tiles/14/2620/6333.png", { method: "DELETE" }),
+      testEnv(),
+      ctx(),
+    );
+    expect(res.status).toBe(405);
+  });
+});
 
 describe("resolvePrivacyTrim", () => {
   it("falls back to the default for an absent var", () => {

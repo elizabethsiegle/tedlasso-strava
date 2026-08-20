@@ -253,18 +253,70 @@ describe("renderPage", () => {
     expect(html).toContain("Long Run");
   });
 
-  it("says yesterday for an activity one day back", () => {
+  /**
+   * The "When" row is calendar wording, so it is driven by the activity's real
+   * start time in the athlete's timezone, never by the elapsed-days number the
+   * mood engine thresholds on.
+   */
+  function whenRow(startedAtIso: string, nowIso: string, tz = "America/Los_Angeles"): string {
+    const startedAt = Date.parse(startedAtIso);
+    const nowMs = Date.parse(nowIso);
+    const base = snapshot();
     const html = renderPage(
-      view({ snapshot: snapshot({ facts: { ...snapshot().facts, daysSinceLast: 1.2 } }) }),
+      view({
+        nowMs,
+        tz,
+        snapshot: snapshot({
+          facts: { ...base.facts, last: { ...base.facts.last!, startedAt } },
+        }),
+      }),
     );
-    expect(html).toContain("yesterday");
+    return /<th scope="row">When<\/th><td>([^<]*)<\/td>/.exec(html)?.[1] ?? "";
+  }
+
+  it("says yesterday for an activity one calendar day back", () => {
+    expect(whenRow("2026-08-13T18:00:00Z", "2026-08-14T19:00:00Z")).toBe("yesterday");
   });
 
   it("says N days ago for an activity further back", () => {
+    expect(whenRow("2026-08-10T18:00:00Z", "2026-08-14T19:00:00Z")).toBe("4 days ago");
+  });
+
+  it("says today for an activity earlier the same local day", () => {
+    // 02:00 PDT and 18:00 PDT on 2026-08-14: sixteen hours apart, one day.
+    expect(whenRow("2026-08-14T09:00:00Z", "2026-08-15T01:00:00Z")).toBe("today");
+  });
+
+  /**
+   * The bug this replaces: a 21:44 PDT ride is 04:44 UTC the NEXT day, so it
+   * read as "today" all the following morning. Elapsed time says 0.57 days and
+   * a UTC calendar says the same date, and both are wrong for the athlete
+   * looking at the page over breakfast.
+   */
+  it("calls last night's ride yesterday once the local day has rolled over", () => {
+    expect(whenRow("2026-08-20T04:44:00Z", "2026-08-20T18:32:00Z")).toBe("yesterday");
+  });
+
+  it("still says today for a ride a few hours ago that has not crossed midnight", () => {
+    // 08:00 PDT, read at 14:00 PDT the same day: further apart in hours than
+    // the night ride above, yet correctly still today.
+    expect(whenRow("2026-08-20T15:00:00Z", "2026-08-20T21:00:00Z")).toBe("today");
+  });
+
+  it("counts the athlete's midnight, not UTC's", () => {
+    // 23:30 PDT on the 19th, read at 00:30 PDT on the 20th: one hour apart and
+    // one calendar day. In UTC both instants fall on the 20th.
+    expect(whenRow("2026-08-20T06:30:00Z", "2026-08-20T07:30:00Z")).toBe("yesterday");
+    // The same two instants in UTC are the same day, which is what a
+    // timezone-blind implementation would report.
+    expect(whenRow("2026-08-20T06:30:00Z", "2026-08-20T07:30:00Z", "UTC")).toBe("today");
+  });
+
+  it("shows an em dash when there is no last activity to date", () => {
     const html = renderPage(
-      view({ snapshot: snapshot({ facts: { ...snapshot().facts, daysSinceLast: 4.7 } }) }),
+      view({ snapshot: snapshot({ facts: { ...snapshot().facts, last: null, daysSinceLast: null } }) }),
     );
-    expect(html).toContain("4 days ago");
+    expect(html).toContain(`<th scope="row">When</th><td>\u2014</td>`);
   });
 
   it("formats a duration under an hour as minutes only", () => {

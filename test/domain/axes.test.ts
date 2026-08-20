@@ -3,7 +3,7 @@ import type { Facts } from "../../src/domain/activity";
 import { clamp, scoreCharge, scoreConsistency } from "../../src/domain/axes";
 
 function facts(overrides: Partial<Facts> = {}): Facts {
-  return {
+  const built: Facts = {
     totalActivities: 10,
     last: {
       name: "Run", sportType: "Run", distanceM: 5000,
@@ -20,8 +20,16 @@ function facts(overrides: Partial<Facts> = {}): Facts {
     isFastest90: false,
     recent: [],
     previousGapDays: 2,
+    calendarDaysSinceLast: 1,
     ...overrides,
   };
+  // The two day counts must not contradict each other: unless a test pins the
+  // calendar one deliberately, derive it from whatever elapsed value it used.
+  if (overrides.calendarDaysSinceLast === undefined) {
+    built.calendarDaysSinceLast =
+      built.daysSinceLast === null ? null : Math.floor(built.daysSinceLast);
+  }
+  return built;
 }
 
 describe("clamp", () => {
