@@ -214,6 +214,7 @@ export default {
           previewNotice,
           setupKey: env.SETUP_KEY,
           showBasemap: resolveBasemap(env.BASEMAP),
+          tz: env.TIMEZONE || "UTC",
         }),
         { headers: { "content-type": "text/html; charset=utf-8" } },
       );

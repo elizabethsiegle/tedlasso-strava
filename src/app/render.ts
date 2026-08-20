@@ -2,6 +2,7 @@ import { getMood, type Mood } from "../data/moods";
 import { formatCount } from "../domain/mood";
 import type { BasemapRender } from "../domain/basemap";
 import type { RouteRender } from "../domain/route";
+import { calendarDaysBetween } from "../domain/time";
 import { DAY_MS, TUNING } from "../domain/tuning";
 import type { Health, Snapshot } from "../types";
 import { REFRESH_SCRIPT } from "./client";
@@ -39,6 +40,8 @@ export interface PageView {
   showRefreshButton: boolean;
   previewNotice: string | null;
   setupKey?: string;
+  /** The athlete's timezone (env.TIMEZONE), for calendar-relative wording. */
+  tz?: string;
   /** Defaults to on. `BASEMAP=off` turns the tile layer off without a re-fetch. */
   showBasemap?: boolean;
 }
@@ -62,21 +65,31 @@ function duration(seconds: number): string {
   return h > 0 ? `${h}h ${m}m` : `${m}m`;
 }
 
-function agoLabel(days: number | null): string {
-  if (days === null) return "—";
-  if (days < 1) return "today";
-  if (days < 2) return "yesterday";
-  return `${Math.floor(days)} days ago`;
+/**
+ * Calendar words from a calendar comparison, in the athlete's timezone.
+ *
+ * This deliberately does not use `facts.daysSinceLast`: that is elapsed time,
+ * so a 21:44 ride read as "today" until 21:44 the following night. It also
+ * cannot be done in UTC, because a Pacific night ride is already the next UTC
+ * day. Computed at render time from `startedAt`, so it corrects snapshots that
+ * were written before this fix without waiting for a refresh.
+ */
+function agoLabel(startedAtMs: number | null, nowMs: number, tz: string): string {
+  if (startedAtMs === null) return "—";
+  const days = calendarDaysBetween(startedAtMs, nowMs, tz);
+  if (days <= 0) return "today";
+  if (days === 1) return "yesterday";
+  return `${days} days ago`;
 }
 
-function receipts(snapshot: Snapshot): string {
+function receipts(snapshot: Snapshot, nowMs: number, tz: string): string {
   const f = snapshot.facts;
   const rows: [string, string][] = [
     ["Last out", f.last ? escapeHtml(f.last.name) : "Nothing yet"],
     ["Sport", f.last ? escapeHtml(f.last.sportType) : "—"],
     ["Distance", f.last ? `${km(f.last.distanceM)} km` : "—"],
     ["Time", f.last ? duration(f.last.movingTimeS) : "—"],
-    ["When", agoLabel(f.daysSinceLast)],
+    ["When", agoLabel(f.last?.startedAt ?? null, nowMs, tz)],
     ["This week", `${f.countLast7} vs your usual ${formatCount(f.baselineWeekly)}`],
     ["Streak", f.streakDays > 0 ? `${f.streakDays} days` : "—"],
     ["Last 90 days", `${f.totalActivities} activities`],
@@ -212,6 +225,7 @@ const PRESEASON_MOOD = requireMood("preseason");
 export function renderPage(view: PageView): string {
   const { snapshot, health, nowMs, showRefreshButton, previewNotice, setupKey } = view;
   const showBasemap = view.showBasemap !== false;
+  const tz = view.tz || "UTC";
 
   const mood = snapshot?.mood ?? {
     id: PRESEASON_MOOD.id,
@@ -329,7 +343,7 @@ export function renderPage(view: PageView): string {
 
   <hr class="rule">
   ${snapshot ? renderRoute(snapshot.route, snapshot, showBasemap) : ""}
-  ${snapshot ? receipts(snapshot) : ""}
+  ${snapshot ? receipts(snapshot, nowMs, tz) : ""}
 
   <footer class="footer">
     <span><a href="https://www.strava.com" rel="noopener">Powered by Strava</a></span>

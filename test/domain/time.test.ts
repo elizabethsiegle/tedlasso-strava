@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addDaysMs, dayKey, daysBetween, startOfDayMs } from "../../src/domain/time";
+import { addDaysMs, calendarDaysBetween, dayKey, daysBetween, startOfDayMs } from "../../src/domain/time";
 
 const LA = "America/Los_Angeles";
 
@@ -70,5 +70,47 @@ describe("daysBetween", () => {
     const a = Date.parse("2026-08-15T00:00:00Z");
     const b = Date.parse("2026-08-14T00:00:00Z");
     expect(daysBetween(a, b)).toBeCloseTo(-1, 6);
+  });
+});
+
+describe("calendarDaysBetween", () => {
+  it("counts local midnights crossed, not elapsed hours", () => {
+    // 21:44 PDT to 11:32 PDT the next morning: 13.8 hours, one calendar day.
+    const ride = Date.parse("2026-08-20T04:44:00Z");
+    const read = Date.parse("2026-08-20T18:32:00Z");
+    expect(calendarDaysBetween(ride, read, LA)).toBe(1);
+    // The same pair as elapsed time, which is what the bug reported.
+    expect(daysBetween(ride, read)).toBeLessThan(1);
+  });
+
+  it("is zero for two instants on the same local day, however far apart", () => {
+    // 00:30 PDT to 23:30 PDT on 2026-08-20: 23 hours, still today.
+    expect(
+      calendarDaysBetween(Date.parse("2026-08-20T07:30:00Z"), Date.parse("2026-08-21T06:30:00Z"), LA),
+    ).toBe(0);
+  });
+
+  it("disagrees with UTC exactly where a night session crosses the UTC date", () => {
+    const ride = Date.parse("2026-08-20T06:30:00Z"); // 23:30 PDT on the 19th
+    const read = Date.parse("2026-08-20T07:30:00Z"); // 00:30 PDT on the 20th
+    expect(calendarDaysBetween(ride, read, LA)).toBe(1);
+    expect(calendarDaysBetween(ride, read, "UTC")).toBe(0);
+  });
+
+  it("counts the 25-hour fall-back day as one day", () => {
+    const before = startOfDayMs(Date.parse("2026-11-01T12:00:00Z"), LA);
+    expect(calendarDaysBetween(before, addDaysMs(before, 1, LA), LA)).toBe(1);
+  });
+
+  it("counts the 23-hour spring-forward day as one day", () => {
+    const before = startOfDayMs(Date.parse("2026-03-08T12:00:00Z"), LA);
+    const after = addDaysMs(before, 1, LA);
+    expect(after - before).toBe(23 * 60 * 60 * 1000); // the short day
+    expect(calendarDaysBetween(before, after, LA)).toBe(1);
+  });
+
+  it("is negative for an instant in the future, so callers can clamp to today", () => {
+    const now = Date.parse("2026-08-20T18:00:00Z");
+    expect(calendarDaysBetween(now + 2 * 86_400_000, now, LA)).toBe(-2);
   });
 });

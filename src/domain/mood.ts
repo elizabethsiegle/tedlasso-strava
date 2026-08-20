@@ -67,7 +67,11 @@ export function selectMood(f: Facts, scores: Scores): Selection {
   if ((f.isLongest90 || f.isFastest90) && days <= TUNING.RECENT_DAYS) {
     const what = f.isLongest90 ? "longest" : "fastest";
     const sport = f.last?.sportType.toLowerCase() ?? "session";
-    const when = days < 1 ? "today" : days < 2 ? "yesterday" : "two days ago";
+    // Calendar days, not `days`: an evening session is "yesterday" the next
+    // morning, however few hours ago it was. The rule above still fires on
+    // elapsed time, so which mood gets picked is unchanged.
+    const calendarDays = f.calendarDaysSinceLast ?? Math.floor(days);
+    const when = calendarDays <= 0 ? "today" : calendarDays === 1 ? "yesterday" : `${calendarDays} days ago`;
     return {
       moodId: "believe",
       reasons: [`Your ${what} ${sport} in 90 days, and it was ${when}`, ...commonReasons(f)],

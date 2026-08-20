@@ -32,6 +32,7 @@ describe("deriveFacts with no activities", () => {
     expect(f.totalActivities).toBe(0);
     expect(f.last).toBeNull();
     expect(f.daysSinceLast).toBeNull();
+    expect(f.calendarDaysSinceLast).toBeNull();
     expect(f.previousGapDays).toBeNull();
   });
 
@@ -69,6 +70,27 @@ describe("last activity and gaps", () => {
     expect(f.last?.name).toBe("Newest");
     expect(f.daysSinceLast).toBeCloseTo(1, 6);
     expect(f.previousGapDays).toBeCloseTo(2, 6); // newest minus middle
+  });
+
+  /**
+   * The two day counts answer different questions and must not be conflated:
+   * thresholds like DORMANT_DAYS are durations, while "today"/"yesterday" is a
+   * calendar comparison in the athlete's own timezone.
+   */
+  it("reports calendar days alongside elapsed days", () => {
+    // 21:44 PDT the previous evening, derived at noon PDT the next day.
+    const nightRide = Date.parse("2026-08-14T04:44:00Z");
+    const f = deriveFacts([makeActivity({ startedAt: nightRide })], NOW, LA);
+    expect(f.daysSinceLast).toBeLessThan(1);
+    expect(f.calendarDaysSinceLast).toBe(1);
+  });
+
+  it("counts calendar days in the configured timezone, not UTC", () => {
+    const nightRide = Date.parse("2026-08-14T04:44:00Z");
+    expect(deriveFacts([makeActivity({ startedAt: nightRide })], NOW, LA).calendarDaysSinceLast).toBe(1);
+    // The same instant is the same UTC date as NOW, so a UTC-derived answer
+    // would be 0 and the page would say "today".
+    expect(deriveFacts([makeActivity({ startedAt: nightRide })], NOW, "UTC").calendarDaysSinceLast).toBe(0);
   });
 
   it("returns a null gap when there is only one activity", () => {
