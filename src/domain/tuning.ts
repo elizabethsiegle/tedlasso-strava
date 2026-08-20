@@ -44,6 +44,19 @@ export const TUNING = {
   ROUTE_VIEWBOX: 1000,
   ROUTE_PADDING: 40,
 
+  // Basemap. The frame is a fixed reference pixel box (the tile layer and the
+  // overlay path are both laid out in it, then scaled fluidly by CSS), so its
+  // proportions are a design decision: a shallow landscape crop, closer to a
+  // programme's pitch diagram than a square.
+  BASEMAP_WIDTH: 1000,
+  BASEMAP_HEIGHT: 560,
+  BASEMAP_PADDING: 56,
+  // Floor: below z3 the tiles are continents and the route is a dot. Ceiling:
+  // z16 is street-level, past which the trimmed route stops fitting anyway.
+  BASEMAP_MIN_ZOOM: 3,
+  BASEMAP_MAX_ZOOM: 16,
+  BASEMAP_TILE_MAX_AGE_S: 2_592_000,
+
   // Presentation
   STALE_SNAPSHOT_HOURS: 12,
   STALE_VERIFIED_DAYS: 180,

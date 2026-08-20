@@ -175,4 +175,59 @@ body[data-refreshing="true"] .hero { opacity: .35; transition: opacity .35s ease
   color: var(--ink-soft);
   padding: 2.5rem .25rem;
 }
+
+/* --- Basemap ------------------------------------------------------------
+   The tile layer is laid out in the fixed reference frame the domain computed
+   (TUNING.BASEMAP_WIDTH x _HEIGHT) using percentages, so the whole thing
+   scales with the sheet and needs no JavaScript to size itself. */
+.route-map { position: relative; overflow: hidden; background: var(--stock); }
+.route-tiles { position: absolute; inset: 0; }
+.route-tile {
+  position: absolute; display: block; border: 0;
+  /* A levels stretch, not a plain fade. CARTO Positron sits in the top 6% of
+     the range (streets ~#f2f2f2 on white), which a simple opacity drop would
+     erase entirely: darken first, blow out the contrast so the streets and
+     labels separate from the paper, then lift the whole thing back to white so
+     only the ink survives the multiply. */
+  filter: grayscale(1) brightness(.6) contrast(4) brightness(1.32);
+  /* Multiply is what makes it read as printed *on* the newsprint rather than
+     pasted over it: white map background disappears into the stock. */
+  mix-blend-mode: multiply;
+  opacity: .85;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .route-tile {
+    /* Same stretch, then inverted and screened, so ink becomes light on the
+       dark stock instead of a white slab. Held back further because light
+       lines on dark read stronger than dark on light at the same opacity. */
+    filter: grayscale(1) brightness(.6) contrast(4) brightness(1.32) invert(1);
+    mix-blend-mode: screen;
+    opacity: .5;
+  }
+}
+.route-map .route-line { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+/* A bar, not a "1 : 25000" ratio: the frame is fitted to the route, so without
+   one a 400 m loop and a 40 km ride look identical. Ticked at both ends like a
+   printed map's scale. */
+/* Full-width and unpadded on purpose: the bar's width is a percentage of the
+   frame the domain measured it against, so any padding on this element would
+   quietly rescale the bar and make it lie. */
+.route-scale {
+  position: absolute; left: 0; right: 0; bottom: .55rem;
+  display: flex; align-items: flex-end; gap: .4rem;
+  font-family: var(--display);
+  font-size: .58rem; letter-spacing: .16em; text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--ink-soft);
+}
+.route-scale-bar {
+  flex: 0 0 auto; height: 6px; margin-left: .8rem;
+  border: 1px solid currentColor; border-top: 0;
+}
+.route-scale span:last-child {
+  background: var(--stock); padding: 0 .25rem; line-height: 1;
+}
+.route-credit { margin-left: auto; }
+.route-credit a { color: inherit; text-decoration-thickness: 1px; }
 `;

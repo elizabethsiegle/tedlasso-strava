@@ -13,6 +13,9 @@
   "vars": {
     "TIMEZONE": "America/Los_Angeles",
     "PRIVACY_TRIM_M": "250",
+    // "off" drops the street-map tiles under the route and leaves the bare
+    // path. See the privacy section in README.md.
+    "BASEMAP": "on",
     "REDIRECT_URI": "http://localhost:8787/auth/callback"
   }
 }

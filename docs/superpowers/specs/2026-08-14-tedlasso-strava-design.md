@@ -516,8 +516,30 @@ Vars: `TIMEZONE` (default `America/Los_Angeles`), `REDIRECT_URI`, `PRIVACY_TRIM_
 - **Inline SVG route over a tile-provider map.** The polyline is already in the data we
   fetch, so drawing it ourselves costs nothing: no API key, no per-view request to a third
   party, no client-side JavaScript, and no visitor data leaking to a tile host. It is also
-  fully unit-testable as a pure function, and looks far less generic than an embedded map —
+  fully unit-testable as a pure function, and looks far less generic than an embedded map,
   which the project's UI rules require.
+
+  **Revised 2026-08-20: the basemap is back, on our own terms.** A bare path reads as a
+  shape with no place attached, and knowing *where* you ran is most of the point. What the
+  original decision was actually protecting is preserved rather than traded away:
+
+  - No API key and no client-side JavaScript: still true. `src/domain/basemap.ts` does the
+    Web Mercator tile arithmetic server-side and emits a plain grid of `<img>` elements plus
+    one overlay `<svg>`, laid out with percentages so it scales with no script at all.
+  - No visitor data reaching a tile host: still true, and this is the load-bearing part.
+    Tiles are proxied by `src/app/tiles.ts` at `/tiles/{z}/{x}/{y}.png`, so the tile
+    provider sees one Worker instead of every visitor's IP and referrer.
+  - Not generic: the tiles are pushed through the newsprint palette (levels stretch,
+    multiply blend) so what survives is the street network and the place names, printed on
+    the same stock as the rest of the sheet. A printed street plan, not an embedded widget.
+  - Still pure and unit-testable: the tile grid, the fit zoom, the projection, and the scale
+    bar are all pure functions over redacted `LatLng` segments.
+
+  What genuinely changes is privacy, and it is worth stating plainly: the trimmed route was
+  anonymous as a shape, and the same shape over a street map is locatable. The endpoints are
+  still redacted before anything is persisted, so this does not publish the home address the
+  trim exists to protect, but it does make the published part findable on a map. `BASEMAP=off`
+  reverts to the bare path without a re-fetch.
 - **Ghost trails deferred.** Overlaying all 90 days of routes was considered and set aside
   for the first build. It needs outlier handling for travel and roughly triples the route
   payload. Revisit once the single-route renderer is proven.

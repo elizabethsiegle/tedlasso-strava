@@ -1,4 +1,5 @@
 import type { Activity } from "./activity";
+import { buildBasemap, type BasemapRender } from "./basemap";
 import { TUNING } from "./tuning";
 
 export interface LatLng {
@@ -107,6 +108,14 @@ export interface RouteRender {
   elevationM: number;
   sportType: string;
   locationLabel: string | null;
+  /**
+   * Tile-aligned geometry for the same route, drawn over a real street map.
+   * Optional, not required: snapshots written before the basemap existed have
+   * no such field, and the renderer falls back to the bare `pathD` frame. Its
+   * own `pathD` is in Web Mercator tile pixels and is NOT interchangeable with
+   * the equirectangular one above.
+   */
+  basemap?: BasemapRender | null;
 }
 
 /** Perpendicular distance from `p` to the segment `a`–`b`, in degrees. */
@@ -264,6 +273,9 @@ export function buildRoute(activity: Activity, trimM: number): RouteRender | nul
   return {
     pathD,
     viewBox,
+    // Built from the redacted segments, never the raw decode, so the write-path
+    // privacy rule still holds: nothing untrimmed is persisted.
+    basemap: buildBasemap(simplifiedSegments),
     distanceM: activity.distanceM,
     elevationM: activity.elevationM,
     sportType: activity.sportType,

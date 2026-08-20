@@ -83,12 +83,25 @@ intentional, not a bug.
 Setting `PRIVACY_TRIM_M=0` disables trimming entirely and publishes exact start and end
 coordinates. Do this only if you understand and accept that trade-off.
 
+The route is drawn over a real street map. That does not publish anything the trim removed,
+but it does change what the surviving part tells a reader: a bare shape is anonymous, while
+the same shape over labelled streets is locatable. Set `BASEMAP=off` in `wrangler.jsonc` to
+drop the tiles and keep the plain route line; it takes effect on the next page view, with no
+re-fetch needed.
+
+Basemap tiles are proxied by the Worker at `/tiles/{z}/{x}/{y}.png`, so visitors' browsers
+never talk to the tile host and the provider sees one Worker instead of every reader's IP.
+
 ## Attribution
 
 Powered by [Strava](https://www.strava.com).
 
 GIFs are hotlinked from [Giphy](https://giphy.com) (`media.giphy.com`); credit to Giphy and
 the original clip creators.
+
+Basemap tiles are [CARTO](https://carto.com/attributions) Positron, built from
+[OpenStreetMap](https://www.openstreetmap.org/copyright) data (© OpenStreetMap
+contributors, ODbL). Both are credited in the route frame's caption on the page itself.
 
 This project is not affiliated with, endorsed by, or sponsored by Strava, Giphy, or the
 makers of Ted Lasso.

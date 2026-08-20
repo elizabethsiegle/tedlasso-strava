@@ -28,7 +28,8 @@ function view(s: Snapshot) {
   return { snapshot: s, health: { ...EMPTY_HEALTH }, nowMs: NOW, showRefreshButton: false, previewNotice: null };
 }
 
-const ROUTE = {
+/** A snapshot written before the basemap existed: `route.basemap` is absent. */
+const LEGACY_ROUTE = {
   pathD: "M40 960 L500 500 L960 40",
   viewBox: "0 0 1000 1000",
   distanceM: 24_300,
@@ -37,9 +38,23 @@ const ROUTE = {
   locationLabel: "San Francisco, CA",
 };
 
+const BASEMAP = {
+  zoom: 14,
+  width: 1000,
+  height: 560,
+  tiles: [
+    { z: 14, x: 2620, y: 6333, left: -12.5, top: -8.4, width: 25.6, height: 45.714 },
+    { z: 14, x: 2621, y: 6333, left: 13.1, top: -8.4, width: 25.6, height: 45.714 },
+  ],
+  pathD: "M120 480 L500 280 L880 90",
+  scale: { label: "500 m", width: 18.2 },
+};
+
+const ROUTE = { ...LEGACY_ROUTE, basemap: BASEMAP };
+
 describe("route rendering", () => {
   it("emits an inline svg with the path", () => {
-    const html = renderPage(view(snapshot(ROUTE)));
+    const html = renderPage(view(snapshot(LEGACY_ROUTE)));
     expect(html).toContain("<svg");
     expect(html).toContain("M40 960 L500 500 L960 40");
     expect(html).toContain('viewBox="0 0 1000 1000"');
@@ -67,11 +82,27 @@ describe("route rendering", () => {
     expect(html).not.toContain("route-place");
   });
 
-  it("loads no external map resources", () => {
+  // The basemap replaced the original "no tiles at all" rule with a narrower
+  // one: tiles are allowed, but the browser must never talk to the tile host.
+  // Every image the page loads is same-origin and proxied (src/app/tiles.ts),
+  // so no visitor IP or referrer reaches a third party.
+  it("loads every map image from our own origin, never a tile host", () => {
     const html = renderPage(view(snapshot(ROUTE)));
-    expect(html).not.toContain("mapbox");
-    expect(html).not.toContain("tile");
-    expect(html).not.toContain("openstreetmap");
+    const sources = [...html.matchAll(/<img[^>]+src="([^"]+)"/g)].map((m) => m[1]!);
+
+    expect(sources.length).toBeGreaterThan(0);
+    for (const src of sources) {
+      expect(src, src).toMatch(/^\/tiles\//);
+    }
+    for (const host of ["cartocdn", "mapbox", "tile.openstreetmap", "googleapis", "arcgis"]) {
+      expect(html, host).not.toContain(host);
+    }
+  });
+
+  it("credits OpenStreetMap and CARTO, as their terms require", () => {
+    const html = renderPage(view(snapshot(ROUTE)));
+    expect(html).toContain("https://www.openstreetmap.org/copyright");
+    expect(html).toContain("https://carto.com/attributions");
   });
 
   it("renders a designed fallback for an indoor activity", () => {
@@ -84,6 +115,111 @@ describe("route rendering", () => {
   it("escapes a malicious location label", () => {
     const html = renderPage(view(snapshot({ ...ROUTE, locationLabel: '"><script>x</script>' })));
     expect(html).not.toContain("<script>x</script>");
+  });
+});
+
+describe("basemap under the route", () => {
+  it("lays the tiles out in the frame the domain computed", () => {
+    const html = renderPage(view(snapshot(ROUTE)));
+    expect(html).toContain('src="/tiles/14/2620/6333.png"');
+    expect(html).toContain('src="/tiles/14/2621/6333.png"');
+    expect(html).toContain("left:13.1%;top:-8.4%;width:25.6%;height:45.714%");
+    // The frame's own proportions, not the abstract 1000x1000 box.
+    expect(html).toContain("aspect-ratio:1000/560");
+    expect(html).toContain('viewBox="0 0 1000 560"');
+  });
+
+  it("draws the tile-aligned path, not the equirectangular one", () => {
+    const html = renderPage(view(snapshot(ROUTE)));
+    expect(html).toContain("M120 480 L500 280 L880 90");
+    expect(html).not.toContain("M40 960 L500 500 L960 40");
+  });
+
+  it("strokes the line twice so the accent survives crossing a street label", () => {
+    const html = renderPage(view(snapshot(ROUTE)));
+    expect(html).toContain('stroke="var(--stock)"');
+    expect(html).toContain('stroke="var(--ink-accent)"');
+  });
+
+  it("hides the tiles from assistive tech and describes the map in one label", () => {
+    const html = renderPage(view(snapshot(ROUTE)));
+    expect(html).toContain('<div class="route-tiles" aria-hidden="true">');
+    expect(html).toContain("street map of San Francisco, CA");
+    // One img alt per tile would read as 15 unlabelled images.
+    expect(html).not.toContain('class="route-tile" src="/tiles/14/2620/6333.png" alt="Map');
+  });
+
+  it("prints a scale bar, because a fitted frame hides how far this actually was", () => {
+    const html = renderPage(view(snapshot(ROUTE)));
+    expect(html).toContain("500 m");
+    expect(html).toContain("width:18.2%");
+  });
+
+  it("falls back to the bare path for a snapshot written before the basemap existed", () => {
+    const html = renderPage(view(snapshot(LEGACY_ROUTE)));
+    expect(html).not.toContain("/tiles/");
+    expect(html).not.toContain('<div class="route-map');
+    expect(html).toContain("M40 960 L500 500 L960 40");
+    expect(html).not.toContain("openstreetmap.org/copyright");
+  });
+
+  it("falls back to the bare path when the basemap is switched off", () => {
+    const html = renderPage({ ...view(snapshot(ROUTE)), showBasemap: false });
+    expect(html).not.toContain('src="/tiles/');
+    expect(html).toContain("M40 960 L500 500 L960 40");
+  });
+
+  it("still renders the route when the basemap came back null (no tiles fit)", () => {
+    const html = renderPage(view(snapshot({ ...LEGACY_ROUTE, basemap: null })));
+    expect(html).toContain("M40 960 L500 500 L960 40");
+    expect(html.toLowerCase()).not.toContain("undefined");
+  });
+
+  // KV is the trust boundary: the snapshot is JSON we parsed, not a value we
+  // can assume our own writer produced.
+  it("drops a tampered tile coordinate instead of emitting it into an attribute", () => {
+    const hostile = {
+      ...ROUTE,
+      basemap: {
+        ...BASEMAP,
+        tiles: [
+          { z: 14, x: 999_999, y: 6333, left: 0, top: 0, width: 25.6, height: 45.714 },
+          { z: 9, x: 1, y: 1, left: 0, top: 0, width: 25.6, height: 45.714 },
+          { z: 14, x: "1\" onerror=alert(1) x=\"", y: 1, left: 0, top: 0, width: 1, height: 1 },
+        ],
+      },
+    } as unknown as Snapshot["route"];
+
+    const html = renderPage(view(snapshot(hostile)));
+    expect(html).not.toContain("999999");
+    expect(html).not.toContain("/tiles/9/");
+    expect(html).not.toContain("onerror");
+  });
+
+  it("coerces a non-numeric position rather than writing NaN into the style", () => {
+    const hostile = {
+      ...ROUTE,
+      basemap: { ...BASEMAP, tiles: [{ z: 14, x: 1, y: 1, left: "x", top: null, width: 1, height: 1 }] },
+    } as unknown as Snapshot["route"];
+
+    const html = renderPage(view(snapshot(hostile)));
+    expect(html).toContain("left:0%;top:0%");
+    expect(html.toLowerCase()).not.toContain("nan");
+  });
+
+  it("escapes a tampered path and scale label", () => {
+    const hostile = {
+      ...ROUTE,
+      basemap: {
+        ...BASEMAP,
+        pathD: '"><script>x</script>',
+        scale: { label: '"><script>y</script>', width: 10 },
+      },
+    } as unknown as Snapshot["route"];
+
+    const html = renderPage(view(snapshot(hostile)));
+    expect(html).not.toContain("<script>x</script>");
+    expect(html).not.toContain("<script>y</script>");
   });
 });
 

@@ -1,5 +1,6 @@
 import { getMood, type Mood } from "../data/moods";
 import { formatCount } from "../domain/mood";
+import type { BasemapRender } from "../domain/basemap";
 import type { RouteRender } from "../domain/route";
 import { DAY_MS, TUNING } from "../domain/tuning";
 import type { Health, Snapshot } from "../types";
@@ -38,6 +39,8 @@ export interface PageView {
   showRefreshButton: boolean;
   previewNotice: string | null;
   setupKey?: string;
+  /** Defaults to on. `BASEMAP=off` turns the tile layer off without a re-fetch. */
+  showBasemap?: boolean;
 }
 
 export function escapeHtml(value: string): string {
@@ -84,13 +87,77 @@ function receipts(snapshot: Snapshot): string {
     .join("")}</tbody></table>`;
 }
 
-export function renderRoute(route: RouteRender | null, snapshot: Snapshot): string {
+/**
+ * The snapshot is JSON out of KV, which is the trust boundary: a hand-edited or
+ * truncated value must not be able to break out of an attribute. Numbers get
+ * coerced (and NaN becomes 0) rather than interpolated raw.
+ */
+function n(value: unknown, fallback = 0): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+function tileLayer(basemap: BasemapRender): string {
+  const zoom = Math.trunc(n(basemap.zoom));
+  const perAxis = 2 ** zoom;
+
+  return basemap.tiles
+    .filter((t) => Math.trunc(n(t.z, -1)) === zoom)
+    .map((t) => {
+      const x = Math.trunc(n(t.x, -1));
+      const y = Math.trunc(n(t.y, -1));
+      if (x < 0 || y < 0 || x >= perAxis || y >= perAxis) return "";
+      return (
+        `<img class="route-tile" src="/tiles/${zoom}/${x}/${y}.png" alt="" ` +
+        `style="left:${n(t.left)}%;top:${n(t.top)}%;width:${n(t.width)}%;height:${n(t.height)}%" ` +
+        `loading="lazy" decoding="async" draggable="false">`
+      );
+    })
+    .join("");
+}
+
+/**
+ * The route drawn over a real street map, so the shape is somewhere rather than
+ * just a shape. The tiles are pushed through the newsprint palette in
+ * `styles.ts`: what comes through is the street network and the place names,
+ * printed on the same stock as the rest of the sheet.
+ *
+ * The line is stroked twice, casing under ink, the way a route is overprinted
+ * on a paper map: without the stock-coloured casing the accent disappears every
+ * time it crosses a label.
+ */
+function mapFrame(basemap: BasemapRender, label: string): string {
+  const w = n(basemap.width, 1000);
+  const h = n(basemap.height, 560);
+  const tiles = tileLayer(basemap);
+  const path = escapeHtml(String(basemap.pathD ?? ""));
+
+  return `<div class="route-map" style="aspect-ratio:${w}/${h}">
+      <div class="route-tiles" aria-hidden="true">${tiles}</div>
+      <svg class="route-line" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet" role="img"
+           aria-label="${escapeHtml(label)}">
+        <path d="${path}" fill="none" stroke="var(--stock)" stroke-width="13"
+              stroke-linecap="round" stroke-linejoin="round" opacity=".85"/>
+        <path d="${path}" fill="none" stroke="var(--ink-accent)" stroke-width="6"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="route-scale" aria-hidden="true">
+        <span class="route-scale-bar" style="width:${n(basemap.scale?.width, 10)}%"></span>
+        <span>${escapeHtml(String(basemap.scale?.label ?? ""))}</span>
+      </div>
+    </div>`;
+}
+
+export function renderRoute(
+  route: RouteRender | null,
+  snapshot: Snapshot,
+  showBasemap = true,
+): string {
   if (!route) {
     const sport = snapshot.facts.last?.sportType ?? "Session";
     const time = snapshot.facts.last ? duration(snapshot.facts.last.movingTimeS) : "";
     const label = time ? `${sport} ${time}` : sport;
     return `<section class="route"><div class="route-frame">
-      <p class="route-none">No route — ${escapeHtml(label)}</p>
+      <p class="route-none">No route: ${escapeHtml(label)}</p>
     </div></section>`;
   }
 
@@ -98,17 +165,34 @@ export function renderRoute(route: RouteRender | null, snapshot: Snapshot): stri
     ? `<span class="route-place">${escapeHtml(route.locationLabel)}</span>`
     : "";
 
-  return `<section class="route"><div class="route-frame">
-    <svg viewBox="${escapeHtml(route.viewBox)}" role="img"
-         aria-label="Route of the last ${escapeHtml(route.sportType)}, ${km(route.distanceM)} kilometres">
+  const basemap = showBasemap ? route.basemap : null;
+  const where = route.locationLabel ? `, on a street map of ${route.locationLabel}` : ", on a street map";
+  const label = `Route of the last ${route.sportType}, ${km(route.distanceM)} kilometres${basemap ? where : ""}`;
+
+  // Snapshots written before the basemap existed (and BASEMAP=off) fall back to
+  // the bare path on newsprint. Note the two pathD values are in different
+  // coordinate systems and are never mixed.
+  const figure = basemap
+    ? mapFrame(basemap, label)
+    : `<svg viewBox="${escapeHtml(route.viewBox)}" role="img" aria-label="${escapeHtml(label)}">
       <path d="${escapeHtml(route.pathD)}" fill="none" stroke="var(--ink-accent)"
             stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
+    </svg>`;
+
+  const credit = basemap
+    ? `<span class="route-credit">Basemap ` +
+      `<a href="https://www.openstreetmap.org/copyright" rel="noopener">OpenStreetMap</a> / ` +
+      `<a href="https://carto.com/attributions" rel="noopener">CARTO</a></span>`
+    : "";
+
+  return `<section class="route"><div class="route-frame">
+    ${figure}
     <div class="route-caption">
       <span>${km(route.distanceM)} km</span>
       <span>${Math.round(route.elevationM)} m up</span>
       <span>${escapeHtml(route.sportType)}</span>
       ${place}
+      ${credit}
     </div>
   </div></section>`;
 }
@@ -127,6 +211,7 @@ const PRESEASON_MOOD = requireMood("preseason");
 
 export function renderPage(view: PageView): string {
   const { snapshot, health, nowMs, showRefreshButton, previewNotice, setupKey } = view;
+  const showBasemap = view.showBasemap !== false;
 
   const mood = snapshot?.mood ?? {
     id: PRESEASON_MOOD.id,
@@ -243,7 +328,7 @@ export function renderPage(view: PageView): string {
   </section>
 
   <hr class="rule">
-  ${snapshot ? renderRoute(snapshot.route, snapshot) : ""}
+  ${snapshot ? renderRoute(snapshot.route, snapshot, showBasemap) : ""}
   ${snapshot ? receipts(snapshot) : ""}
 
   <footer class="footer">
