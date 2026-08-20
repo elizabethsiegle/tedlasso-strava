@@ -38,6 +38,63 @@
   "session_metrics": {
     "turn_count": 1
   },
+  "summary": {
+    "intent": "Add a real street map underlay behind the existing SVG route line on the tedlasso-strava activity page, since a bare path shape wasn't as helpful as seeing the route on a city map.",
+    "outcome": "Implemented a full basemap feature: a pure Web Mercator projection module (basemap.ts), a same-origin tile proxy (tiles.ts) to avoid leaking visitor data to the tile host, newsprint-styled tile rendering with dark-mode inversion, a scale bar, a BASEMAP=off kill switch, 60 new tests (371 total passing, 97.3% branch coverage), visual verification via headless Chrome screenshots in both themes, updated docs (CLAUDE.md, spec decision log, README), and committed everything to a new branch feat/route-basemap without pushing.",
+    "learnings": {
+      "repo": [
+        "Two route path coordinate systems coexist and must never be mixed: RouteRender.pathD is equirectangular normalized into an abstract 1000x1000 box, while basemap.pathD is Web Mercator in tile pixels aligned to the actual map tiles",
+        "The original spec explicitly chose inline SVG over tile providers to avoid leaking visitor IPs to a third party; reversing that decision required proxying tiles server-side (one Worker request instead of per-visitor) to preserve the original privacy guarantee",
+        "Route privacy trimming happens in the write path before persistence (DEFAULT_PRIVACY_TRIM_M); the basemap must be built only from already-redacted segments so nothing untrimmed is ever persisted or rendered",
+        "CARTO Positron tiles sit in the top 6% of the tonal range (streets ~#f2f2f2 on white), so a plain opacity fade erases them — a levels stretch (brightness→contrast→brightness) plus mix-blend-mode:multiply is needed to make them read as printed on newsprint stock",
+        "Snapshots written before a schema change (basemap field) must be handled as optional/nullable and fall back gracefully — KV-stored snapshots are a trust boundary and untrusted JSON, so numeric coercion (NaN→0) and HTML escaping are required for all snapshot-derived render values",
+        "The Cache API only accepts GET requests, so tile proxy caching must skip HEAD requests and go straight upstream",
+        "Vitest coverage gate in this repo is 95% branches; project uses npm run typecheck, npm test, npm run coverage as verification commands"
+      ],
+      "code": [
+        {
+          "path": "src/domain/basemap.ts",
+          "finding": "New pure domain module computing fit zoom, tile grid layout, Web Mercator re-projection of route segments, and a scale bar; must return null when coordinates are non-finite or every segment is a single stranded point"
+        },
+        {
+          "path": "src/app/tiles.ts",
+          "finding": "Tile proxy route handler: bounds-checks z/x/y, uses edge cache (skipping non-GET), serves a transparent 1x1 PNG fallback on upstream failure so a bad minute degrades gracefully instead of showing broken images"
+        },
+        {
+          "path": "src/app/render.ts",
+          "line": 1,
+          "finding": "renderRoute now takes a showBasemap param (defaults true); mapFrame() renders tile <img> layers plus a doubled-stroke SVG line (stock-colored casing under ink-accent) so the route stays visible crossing street labels; all snapshot-derived numeric/string fields pass through defensive coercion (n()) and escapeHtml()"
+        },
+        {
+          "path": "src/worker.ts",
+          "finding": "Added resolveBasemap(env.BASEMAP) exported function: opt-out via case-insensitive 'off' literal only, checked at render time (not bake-time) so toggling takes effect on next page view without a re-fetch; /tiles/ routes are checked first in the fetch handler for performance since there are ~15-20 per page view"
+        },
+        {
+          "path": "src/domain/tuning.ts",
+          "finding": "BASEMAP_WIDTH/HEIGHT/PADDING and BASEMAP_MIN_ZOOM(3)/MAX_ZOOM(16) constants added; zoom floor avoids continent-level tiles, ceiling avoids exceeding street-level detail where trimmed routes stop fitting"
+        }
+      ],
+      "workflow": [
+        "Used a scratchpad directory with an esbuild-bundled preview-server.ts plus headless Chrome screenshots to visually verify CSS/rendering changes before committing, since this is a Cloudflare Worker app without an easy live-reload UI test path",
+        "Iteratively tuned tile color-processing filters (brightness/contrast values) by generating multiple composited PNG variants with PIL and visually inspecting them before picking final CSS filter values",
+        "Wrote tests asserting scale-bar accuracy against real haversine ground-truth distance rather than just checking the label renders",
+        "Used python3 heredoc scripts via Bash for precise multi-file string-replacement edits instead of the Edit tool in several places",
+        "Deliberately excluded untracked .claude/.codex/.entire tooling directories from the commit as unrelated to the feature"
+      ]
+    },
+    "friction": [
+      "Had to reinstall node_modules mid-session for coverage to run",
+      "Initial preview-server.ts had hardcoded absolute paths that needed correcting before it would run",
+      "First screenshot review revealed scale bar/positioning issues requiring CSS iteration (padding assumptions were wrong, scale bar background handling needed fixing)",
+      "Needed multiple rounds of pole-wrapping edge case fixes in basemap tests (north pole, south pole, antimeridian) to get coverage gate passing",
+      "Reversing a previously deliberate architectural decision (spec explicitly rejected tile providers) required careful documentation to justify why the new approach doesn't reintroduce the original privacy concern"
+    ],
+    "open_items": [
+      "User has not yet decided whether to push the feat/route-basemap branch or open a PR",
+      "Weight tradeoff noted but not acted on: a route frame loads 15-20 tiles (~28KB each); shrinking frame height could reduce this at cost of vertical room for north-south routes",
+      "Privacy tradeoff explicitly flagged for user judgment: route shape over labelled streets is now locatable even though endpoints remain trimmed — user has BASEMAP=off available but hasn't confirmed final stance"
+    ]
+  },
   "initial_attribution": {
     "calculated_at": "2026-08-20T16:43:19.148215Z",
     "agent_lines": 1275,
