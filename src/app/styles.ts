@@ -230,4 +230,58 @@ body[data-refreshing="true"] .hero { opacity: .35; transition: opacity .35s ease
 }
 .route-credit { margin-left: auto; }
 .route-credit a { color: inherit; text-decoration-thickness: 1px; }
+
+/* A second, inner keyline. Printed plates carry a double rule, and an outline
+   with a negative offset draws one without touching the tile layer's geometry
+   the way a border would (percentage tile positions are measured against this
+   box). Not a card shadow: no blur, no elevation, just a rule. */
+.route-map { outline: 1px solid var(--rule); outline-offset: -1px; }
+
+.route-reg path { fill: none; stroke: var(--ink-soft); stroke-width: 2; opacity: .55; }
+.route-north-label {
+  font-family: var(--display); font-weight: 700;
+  font-size: 17px; letter-spacing: 1px;
+  fill: var(--ink-soft);
+}
+
+/* --- Form guide ---------------------------------------------------------
+   Set tighter than the hero and looser than the receipts: the chart is the
+   middle density on the sheet, which is what lets it sit between them. */
+.form { margin-top: 1.75rem; }
+.form-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 1rem; flex-wrap: wrap;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: .3rem;
+  margin-bottom: .85rem;
+}
+.form-title {
+  margin: 0;
+  font-family: var(--display); font-weight: 800;
+  font-size: 1.1rem; letter-spacing: -.015em; text-transform: uppercase;
+}
+.form-sub {
+  font-family: var(--display);
+  font-size: .62rem; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.form-chart { display: block; width: 100%; height: auto; }
+.form-chart text {
+  font-family: var(--display);
+  font-variant-numeric: tabular-nums lining-nums;
+  text-transform: uppercase;
+}
+/* Sizes are in viewBox units, so they scale with the sheet like the columns do. */
+.form-tick { font-size: 13px; letter-spacing: 1.6px; fill: var(--ink-soft); }
+.form-tick--now { fill: var(--ink); font-weight: 700; }
+.form-value { font-size: 16px; font-weight: 800; letter-spacing: .4px; fill: var(--ink-accent); }
+.form-usual { font-size: 12px; letter-spacing: 1.8px; fill: var(--ink-accent); }
+
+/* Present for screen readers and omitted from the page. The chart is the only
+   place the weekly numbers appear, so they cannot simply be left out. */
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px;
+  margin: -1px; padding: 0; border: 0;
+  overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+}
 `;

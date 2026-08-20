@@ -310,4 +310,41 @@ describe("buildBasemap", () => {
     expect(b.width).toBe(TUNING.BASEMAP_WIDTH);
     expect(b.height).toBe(TUNING.BASEMAP_HEIGHT);
   });
+
+  it("marks the ends of the line it actually drew", () => {
+    const b = buildBasemap([MISSION_LOOP])!;
+    const points = pathPoints(b.pathD);
+    expect(b.start).toEqual(points[0]);
+    expect(b.end).toEqual(points[points.length - 1]);
+  });
+
+  it("takes the ends from the outermost segments when the route is split", () => {
+    const first: LatLng[] = [
+      { lat: 37.7599, lng: -122.4148 },
+      { lat: 37.7620, lng: -122.4148 },
+    ];
+    const second: LatLng[] = [
+      { lat: 37.7644, lng: -122.4110 },
+      { lat: 37.7644, lng: -122.4089 },
+    ];
+    const b = buildBasemap([first, second])!;
+    const points = pathPoints(b.pathD);
+    expect(b.start).toEqual(points[0]);
+    expect(b.end).toEqual(points[points.length - 1]);
+    expect(b.start).not.toEqual(b.end);
+  });
+
+  it("puts both ends on the same spot for a loop, because that is where they are", () => {
+    const b = buildBasemap([MISSION_LOOP])!;
+    // MISSION_LOOP closes on its own first point.
+    expect(b.start).toEqual(b.end);
+  });
+
+  it("is null when no segment has a line in it, rather than an empty path", () => {
+    const stranded: LatLng[][] = [
+      [{ lat: 37.76, lng: -122.41 }],
+      [{ lat: 37.77, lng: -122.42 }],
+    ];
+    expect(buildBasemap(stranded)).toBeNull();
+  });
 });

@@ -223,6 +223,62 @@ describe("basemap under the route", () => {
   });
 });
 
+describe("the printed plate around the map", () => {
+  const WITH_ENDS = {
+    ...ROUTE,
+    basemap: { ...BASEMAP, start: { x: 120, y: 480 }, end: { x: 880, y: 90 } },
+  };
+
+  it("studs the start and rings the finish, each cased in stock", () => {
+    const html = renderPage(view(snapshot(WITH_ENDS)));
+    expect(html).toContain(
+      '<circle cx="120" cy="480" r="9" fill="var(--ink-accent)" stroke="var(--stock)" stroke-width="4"/>',
+    );
+    expect(html).toContain(
+      '<circle cx="880" cy="90" r="9" fill="var(--stock)" stroke="var(--ink-accent)" stroke-width="5"/>',
+    );
+  });
+
+  it("draws no terminals for a snapshot written before they existed", () => {
+    // BASEMAP has no start/end: the plate still prints, minus the studs.
+    const html = renderPage(view(snapshot(ROUTE)));
+    expect(html).not.toContain("<circle");
+    expect(html).toContain('class="route-reg"');
+  });
+
+  it("prints four registration marks, one per corner", () => {
+    const html = renderPage(view(snapshot(WITH_ENDS)));
+    const marks = html.slice(html.indexOf('class="route-reg"'));
+    expect([...marks.slice(0, marks.indexOf("</g>")).matchAll(/<path /g)]).toHaveLength(4);
+  });
+
+  it("orients the frame with a north arrow to go with the scale bar", () => {
+    const html = renderPage(view(snapshot(WITH_ENDS)));
+    expect(html).toContain('class="route-north"');
+    expect(html).toContain(">N</text>");
+    expect(html).toContain('class="route-scale-bar"');
+  });
+
+  it("keeps the furniture out of the accessible tree", () => {
+    const html = renderPage(view(snapshot(WITH_ENDS)));
+    const reg = html.indexOf('class="route-reg"');
+    const north = html.indexOf('class="route-north"');
+    expect(html.slice(reg, reg + 60)).toContain("aria-hidden");
+    expect(html.slice(north, north + 60)).toContain("aria-hidden");
+  });
+
+  it("coerces hand-edited terminal coordinates instead of drawing to NaN", () => {
+    const hostile = {
+      ...ROUTE,
+      basemap: { ...BASEMAP, start: { x: "left", y: null }, end: { x: Infinity, y: 90 } },
+    } as unknown as Snapshot["route"];
+    const html = renderPage(view(snapshot(hostile)));
+    expect(html).toContain('<circle cx="0" cy="0"');
+    expect(html).not.toContain("NaN");
+    expect(html).not.toContain("Infinity");
+  });
+});
+
 describe("preview route", () => {
   function testEnv() {
     return {

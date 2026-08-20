@@ -72,4 +72,12 @@ Concretely, on this project:
   already cleared for publication. It does change what the published part reveals, though: a
   shape on paper is anonymous, and the same shape over a street map is an address. If that
   trade is ever unwanted, `BASEMAP=off` drops the tiles and keeps the route.
+- The form guide under the map is one measure on one axis: weekly moving time, in hours.
+  Never give it a second y-scale. Session count and distance belong in the column hover
+  titles and the table beneath the figure, never as a second series. The columns are ink and
+  the median rule is the accent, not the other way round, and rest weeks are counted in the
+  median so "usual" stays a number the athlete actually held.
+- `Snapshot.workload`, `BasemapRender.start` and `BasemapRender.end` are optional, not merely
+  nullable. Snapshots written before each of them exist in KV, and the read path has to
+  survive being handed one, so guard on the key rather than trusting the type.
 - Display "Powered by Strava" attribution with a link back, per Strava's brand guidelines.

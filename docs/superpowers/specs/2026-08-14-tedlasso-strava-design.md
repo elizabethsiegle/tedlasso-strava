@@ -540,6 +540,36 @@ Vars: `TIMEZONE` (default `America/Los_Angeles`), `REDIRECT_URI`, `PRIVACY_TRIM_
   still redacted before anything is persisted, so this does not publish the home address the
   trim exists to protect, but it does make the published part findable on a map. `BASEMAP=off`
   reverts to the bare path without a re-fetch.
+- **A weekly form guide, one measure on one axis.** Added 2026-08-20. The receipts could
+  already say "4 this week vs your usual 2.5" but not whether that was a spike, a plateau or
+  a recovery. Twelve weekly columns under the map answer it at a glance.
+
+  - **Hours, not sessions and not distance.** One measure means one y-axis. A dual-scale
+    figure (hours as columns, distance as a line) is the quickest way to make two unrelated
+    numbers look correlated. Session count and distance ride along in each column's hover
+    title and in the table beneath the figure, where they cannot be misread as a second
+    scale.
+  - **Ink columns, accent rule.** The accent budget on this project is rules, the mood label
+    and the GIF border. Twelve accent columns would spend all of it on one figure, so the
+    ink carries the data and the accent carries the single line it is measured against.
+  - **Rest weeks count toward the median.** Dropping them would lift "usual" to a number the
+    athlete never actually held. A zero week prints as a stub sitting on the rule rather than
+    as an absent column, so it reads as nothing rather than as missing data.
+  - **Its own week count.** `WORKLOAD_WEEKS` is deliberately separate from `BASELINE_WEEKS`:
+    retuning the mood engine's baseline should not silently redraw the chart.
+  - **Rolling 7-day buckets anchored to the athlete's today**, the same convention
+    `computeBaseline` already uses, so "this week" means the same thing in the figure as in
+    the receipts row directly above it.
+  - **The median label sits at the left, in front of the columns.** It was right-aligned
+    first, which printed it straight through this week's value label. The rule paints behind
+    the columns so it never slices one, and the label paints in front of them over a stock
+    white-out, the same trick the scale bar uses to stay legible over the map.
+- **Plate furniture on the map.** Added 2026-08-20. Four printer's registration marks (which
+  the UI rules ask for by name), a north arrow to go with the scale bar, and terminals on the
+  route: a filled stud where the line starts, an open ring where it ends. The terminals mark
+  the ends of the *trimmed* geometry, so they add direction to the figure without publishing a
+  metre more than the path already draws. A loop lands both on the same point and the ring
+  wins, which is the honest reading of a route that came back to where it started.
 - **Ghost trails deferred.** Overlaying all 90 days of routes was considered and set aside
   for the first build. It needs outlier handling for travel and roughly triples the route
   payload. Revisit once the single-route renderer is proven.

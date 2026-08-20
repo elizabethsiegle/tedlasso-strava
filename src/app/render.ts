@@ -2,8 +2,9 @@ import { getMood, type Mood } from "../data/moods";
 import { formatCount } from "../domain/mood";
 import type { BasemapRender } from "../domain/basemap";
 import type { RouteRender } from "../domain/route";
-import { calendarDaysBetween } from "../domain/time";
+import { addDaysMs, calendarDaysBetween, dayKey } from "../domain/time";
 import { DAY_MS, TUNING } from "../domain/tuning";
+import type { Workload } from "../domain/workload";
 import type { Health, Snapshot } from "../types";
 import { REFRESH_SCRIPT } from "./client";
 import { STYLES } from "./styles";
@@ -57,6 +58,24 @@ export function escapeHtml(value: string): string {
 
 function km(metres: number): string {
   return (metres / 1000).toFixed(1);
+}
+
+/** Decimal hours, for the form guide: comparable across weeks in a way "1h 30m" is not. */
+function hoursLabel(seconds: number): string {
+  return (seconds / 3600).toFixed(1);
+}
+
+const MONTH_ABBR = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/**
+ * "2 Jun" in the athlete's own calendar, built from `dayKey` and a fixed table
+ * rather than `toLocaleDateString`, for the same reason `formatUtc` exists: no locale
+ * guessing, and a test can assert the exact string.
+ */
+function shortDate(epochMs: number, tz: string): string {
+  const parts = dayKey(epochMs, tz).split("-");
+  const month = MONTH_ABBR[Number(parts[1]) - 1] ?? "";
+  return `${Number(parts[2])} ${month}`;
 }
 
 function duration(seconds: number): string {
@@ -128,6 +147,67 @@ function tileLayer(basemap: BasemapRender): string {
     .join("");
 }
 
+/** SVG coordinates carry two decimals; more is noise in a 1000-unit frame. */
+function r(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+/**
+ * Printer's registration marks, inset from the plate edge.
+ *
+ * CLAUDE.md asks for these by name. They are the detail that makes the figure
+ * read as printed rather than rendered, and they cost four hairlines.
+ */
+function registrationMarks(w: number, h: number): string {
+  const inset = 13;
+  const arm = 26;
+  const corners: [number, number, number, number][] = [
+    [inset, inset, 1, 1],
+    [w - inset, inset, -1, 1],
+    [inset, h - inset, 1, -1],
+    [w - inset, h - inset, -1, -1],
+  ];
+  return `<g class="route-reg" aria-hidden="true">${corners
+    .map(([x, y, sx, sy]) => `<path d="M${x} ${y + sy * arm}L${x} ${y}L${x + sx * arm} ${y}"/>`)
+    .join("")}</g>`;
+}
+
+/**
+ * A north arrow, because the frame is rotated to nothing and a printed map that
+ * carries a scale bar but no orientation is half a map.
+ */
+function northArrow(w: number): string {
+  const x = w - 60;
+  const top = 44;
+  return (
+    `<g class="route-north" aria-hidden="true">` +
+    `<path d="M${x} ${top + 34}L${x} ${top + 8}" fill="none" stroke="var(--ink-soft)" stroke-width="2"/>` +
+    `<path d="M${x - 7} ${top + 13}L${x} ${top}L${x + 7} ${top + 13}Z" fill="var(--ink-soft)"/>` +
+    `<text class="route-north-label" x="${x}" y="${top + 50}" text-anchor="middle">N</text>` +
+    `</g>`
+  );
+}
+
+/**
+ * Where the published line starts and stops: a filled stud for the off, an open
+ * ring for the finish, both cased in stock so they survive crossing a label.
+ *
+ * These are the ends of the *trimmed* geometry, so they mark where the drawing
+ * begins, not where the athlete's door is. A loop lands both on the same spot
+ * and the open ring wins, which is the honest reading of a route that returned
+ * to where it started.
+ */
+function terminals(basemap: BasemapRender): string {
+  const { start, end } = basemap;
+  if (!start || !end) return "";
+  return (
+    `<circle cx="${r(n(start.x))}" cy="${r(n(start.y))}" r="9" ` +
+    `fill="var(--ink-accent)" stroke="var(--stock)" stroke-width="4"/>` +
+    `<circle cx="${r(n(end.x))}" cy="${r(n(end.y))}" r="9" ` +
+    `fill="var(--stock)" stroke="var(--ink-accent)" stroke-width="5"/>`
+  );
+}
+
 /**
  * The route drawn over a real street map, so the shape is somewhere rather than
  * just a shape. The tiles are pushed through the newsprint palette in
@@ -152,6 +232,9 @@ function mapFrame(basemap: BasemapRender, label: string): string {
               stroke-linecap="round" stroke-linejoin="round" opacity=".85"/>
         <path d="${path}" fill="none" stroke="var(--ink-accent)" stroke-width="6"
               stroke-linecap="round" stroke-linejoin="round"/>
+        ${terminals(basemap)}
+        ${registrationMarks(w, h)}
+        ${northArrow(w)}
       </svg>
       <div class="route-scale" aria-hidden="true">
         <span class="route-scale-bar" style="width:${n(basemap.scale?.width, 10)}%"></span>
@@ -208,6 +291,175 @@ export function renderRoute(
       ${credit}
     </div>
   </div></section>`;
+}
+
+/* --- Form guide -----------------------------------------------------------
+   Twelve weeks of training volume, set as a printed form chart under the map.
+
+   The columns are ink, not accent, on purpose. CLAUDE.md keeps the accent for
+   rules, the mood label and the GIF border; twelve accent columns would spend
+   the entire accent budget on one figure. So ink carries the data and the accent
+   carries the single line you are meant to measure it against: the median week.
+   One measure, one axis: hours. Distance and session count ride along in each
+   column's tooltip and in the table underneath, never as a second y-scale. */
+const CHART = {
+  width: 1000,
+  height: 236,
+  /** Top of the tallest column. The gap above it is where its label sits. */
+  top: 28,
+  baseline: 196,
+  labelY: 222,
+  maxBarWidth: 56,
+  /** A week off still gets a visible stub, so it reads as "nothing", not "no data". */
+  zeroStub: 3,
+} as const;
+
+/**
+ * The form guide, or an empty string when there is nothing honest to draw.
+ *
+ * Every number here comes out of KV, which is the trust boundary, so each one is
+ * coerced through `n()` before it reaches a coordinate. The layout is derived
+ * from `weeks.length` rather than TUNING.WORKLOAD_WEEKS so that a snapshot
+ * written under a different setting still draws a correct chart instead of one
+ * that runs off the end of the frame.
+ */
+export function renderWorkload(workload: Workload | null | undefined, tz: string): string {
+  if (!workload || !Array.isArray(workload.weeks) || workload.weeks.length === 0) return "";
+
+  const weeks = workload.weeks.map((week) => ({
+    startMs: n(week?.startMs),
+    count: Math.max(0, Math.trunc(n(week?.count))),
+    movingTimeS: Math.max(0, n(week?.movingTimeS)),
+    distanceM: Math.max(0, n(week?.distanceM)),
+  }));
+
+  const peak = Math.max(...weeks.map((week) => week.movingTimeS));
+  // Nothing to scale against: a chart whose every column is zero says less than
+  // the "quiet on the pitch" notice already up the page.
+  if (peak <= 0) return "";
+
+  const slot = CHART.width / weeks.length;
+  const barWidth = Math.min(CHART.maxBarWidth, slot * 0.68);
+  const plot = CHART.baseline - CHART.top;
+  const medianS = Math.max(0, n(workload.medianMovingTimeS));
+  const lastIndex = weeks.length - 1;
+
+  const columnX = (index: number): number => index * slot + (slot - barWidth) / 2;
+  const barHeight = (seconds: number): number =>
+    seconds > 0 ? Math.max(2, (seconds / peak) * plot) : CHART.zeroStub;
+
+  const bars = weeks
+    .map((week, index) => {
+      const height = barHeight(week.movingTimeS);
+      const rest = week.movingTimeS === 0;
+      const label =
+        `${shortDate(week.startMs, tz)} to ${shortDate(addDaysMs(week.startMs, 6, tz), tz)} · ` +
+        `${week.count} ${week.count === 1 ? "session" : "sessions"} · ` +
+        `${hoursLabel(week.movingTimeS)} h · ${km(week.distanceM)} km`;
+      return (
+        `<g><title>${escapeHtml(label)}</title>` +
+        `<rect class="form-bar" x="${r(columnX(index))}" y="${r(CHART.baseline - height)}" ` +
+        `width="${r(barWidth)}" height="${r(height)}" ` +
+        `fill="${rest ? "var(--rule)" : "var(--ink)"}"${rest ? "" : ' opacity=".86"'}/>` +
+        `</g>`
+      );
+    })
+    .join("");
+
+  // Only when there is a middle worth drawing: a median of zero would just print
+  // a second axis line on top of the first.
+  const usualY = CHART.baseline - (medianS / peak) * plot;
+  const usualText = `usual ${hoursLabel(medianS)} h`;
+
+  // The rule goes behind the columns so it never slices through one.
+  const usualRule =
+    medianS > 0
+      ? `<line x1="0" y1="${r(usualY)}" x2="${CHART.width}" y2="${r(usualY)}" ` +
+        `stroke="var(--ink-accent)" stroke-width="2" stroke-dasharray="10 7"/>`
+      : "";
+
+  // The label goes in front of them, at the left. It used to sit at the right
+  // end, where it printed straight through this week's value. SVG has no text
+  // metrics to lay this out against, so the white-out behind it is sized from
+  // the string at its declared 12px and generous rather than tight, using the same
+  // trick the scale bar uses to stay legible over the map.
+  const usualLabel =
+    medianS > 0
+      ? `<rect x="0" y="${r(usualY - 21)}" width="${r(usualText.length * 7.4 + 10)}" ` +
+        `height="17" fill="var(--stock)"/>` +
+        `<text class="form-usual" x="5" y="${r(usualY - 8)}" text-anchor="start">${usualText}</text>`
+      : "";
+
+  const latest = weeks[lastIndex] as (typeof weeks)[number];
+  const latestTop = CHART.baseline - barHeight(latest.movingTimeS);
+  const latestMark =
+    `<rect x="${r(columnX(lastIndex))}" y="${CHART.baseline + 3}" ` +
+    `width="${r(barWidth)}" height="3" fill="var(--ink-accent)"/>` +
+    `<text class="form-value" x="${r(lastIndex * slot + slot / 2)}" y="${r(latestTop - 9)}" ` +
+    `text-anchor="middle">${hoursLabel(latest.movingTimeS)} h</text>`;
+
+  // Every third week, plus the newest one. A tick under all twelve would collide
+  // at the widths this sheet actually gets read at.
+  const ticks = weeks
+    .map((week, index) => {
+      const newest = index === lastIndex;
+      if (!newest && index % 3 !== 0) return "";
+      const text = newest ? "this week" : shortDate(week.startMs, tz);
+      return (
+        `<text class="form-tick${newest ? " form-tick--now" : ""}" ` +
+        `x="${r(index * slot + slot / 2)}" y="${CHART.labelY}" text-anchor="middle">` +
+        `${escapeHtml(text)}</text>`
+      );
+    })
+    .join("");
+
+  const sessions = weeks.reduce((total, week) => total + week.count, 0);
+  const summary =
+    `Training hours per week over the last ${weeks.length} weeks. ` +
+    `Peak ${hoursLabel(peak)} hours, usual ${hoursLabel(medianS)} hours, ` +
+    `${sessions} ${sessions === 1 ? "session" : "sessions"} in total.`;
+
+  // The same numbers as a table, for anyone who cannot use the picture. Hidden
+  // visually rather than omitted: the chart is the only place this data appears.
+  const table =
+    `<table class="visually-hidden"><caption>Weekly training volume</caption>` +
+    `<thead><tr><th scope="col">Week of</th><th scope="col">Sessions</th>` +
+    `<th scope="col">Time</th><th scope="col">Distance</th></tr></thead><tbody>` +
+    weeks
+      .map(
+        (week) =>
+          `<tr><th scope="row">${escapeHtml(shortDate(week.startMs, tz))}</th>` +
+          `<td>${week.count}</td><td>${hoursLabel(week.movingTimeS)} h</td>` +
+          `<td>${km(week.distanceM)} km</td></tr>`,
+      )
+      .join("") +
+    `</tbody></table>`;
+
+  return `<section class="form">
+    <div class="form-head">
+      <h2 class="form-title">Form guide</h2>
+      <span class="form-sub">Hours trained per week</span>
+    </div>
+    <div class="route-frame">
+      <svg class="form-chart" viewBox="0 0 ${CHART.width} ${CHART.height}" role="img"
+           aria-label="${escapeHtml(summary)}">
+        ${usualRule}
+        ${bars}
+        <line x1="0" y1="${CHART.baseline}" x2="${CHART.width}" y2="${CHART.baseline}"
+              stroke="var(--rule)" stroke-width="1.5"/>
+        ${usualLabel}
+        ${latestMark}
+        ${ticks}
+      </svg>
+      ${table}
+    </div>
+    <div class="route-caption">
+      <span>Peak ${hoursLabel(peak)} h</span>
+      <span>Usual ${hoursLabel(medianS)} h</span>
+      <span>${sessions} sessions</span>
+      <span>${weeks.length} weeks</span>
+    </div>
+  </section>`;
 }
 
 function requireMood(id: string): Mood {
@@ -343,6 +595,7 @@ export function renderPage(view: PageView): string {
 
   <hr class="rule">
   ${snapshot ? renderRoute(snapshot.route, snapshot, showBasemap) : ""}
+  ${snapshot ? renderWorkload(snapshot.workload, tz) : ""}
   ${snapshot ? receipts(snapshot, nowMs, tz) : ""}
 
   <footer class="footer">

@@ -38,6 +38,12 @@ export interface BasemapScale {
   width: number;
 }
 
+/** A point in the same tile-pixel space as `BasemapRender.tiles`. */
+export interface BasemapPoint {
+  x: number;
+  y: number;
+}
+
 export interface BasemapRender {
   zoom: number;
   /** The frame's reference pixel size; also the overlay SVG's viewBox. */
@@ -46,6 +52,14 @@ export interface BasemapRender {
   tiles: BasemapTile[];
   /** The route, in the same pixel space as `tiles`. Not interchangeable with RouteRender.pathD. */
   pathD: string;
+  /**
+   * The first and last points of the *published* line, so the figure can show
+   * which way round it was ridden. These are ends of the already-trimmed
+   * geometry, not the real ones: marking them reveals nothing the path itself
+   * does not already draw.
+   */
+  start?: BasemapPoint;
+  end?: BasemapPoint;
   scale: BasemapScale;
 }
 
@@ -174,20 +188,30 @@ export function buildBasemap(segments: LatLng[][]): BasemapRender | null {
     }
   }
 
-  const px = (n: number): string => String(Math.round(n * 100) / 100);
-  const pathD = segments
-    .filter((segment) => segment.length >= 2)
+  const px = (n: number): number => Math.round(n * 100) / 100;
+  const toXY = (p: LatLng): BasemapPoint => ({
+    x: px(mercatorXFraction(p.lng) * world - originX),
+    y: px(mercatorYFraction(p.lat) * world - originY),
+  });
+
+  // A one-point segment has nothing to stroke, and a frame of nothing but those
+  // has no line at all, which is a null basemap rather than an empty path string.
+  const drawn = segments.filter((segment) => segment.length >= 2);
+  if (drawn.length === 0) return null;
+
+  const pathD = drawn
     .map((segment) =>
       segment
         .map((p, i) => {
-          const x = mercatorXFraction(p.lng) * world - originX;
-          const y = mercatorYFraction(p.lat) * world - originY;
-          return `${i === 0 ? "M" : "L"}${px(x)} ${px(y)}`;
+          const { x, y } = toXY(p);
+          return `${i === 0 ? "M" : "L"}${x} ${y}`;
         })
         .join(" "),
     )
     .join(" ");
-  if (pathD.length === 0) return null;
+
+  const firstSegment = drawn[0] as LatLng[];
+  const lastSegment = drawn[drawn.length - 1] as LatLng[];
 
   return {
     zoom,
@@ -195,6 +219,8 @@ export function buildBasemap(segments: LatLng[][]): BasemapRender | null {
     height,
     tiles,
     pathD,
+    start: toXY(firstSegment[0] as LatLng),
+    end: toXY(lastSegment[lastSegment.length - 1] as LatLng),
     scale: scaleBar(zoom, latFromYFraction((minY + maxY) / 2), width),
   };
 }

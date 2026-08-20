@@ -57,6 +57,12 @@ export const TUNING = {
   BASEMAP_MAX_ZOOM: 16,
   BASEMAP_TILE_MAX_AGE_S: 2_592_000,
 
+  // Workload chart. Deliberately its own constant rather than a reuse of
+  // BASELINE_WEEKS: the mood engine's baseline window is a tuning knob for the
+  // engine, and retuning it should not silently redraw the chart. 12 weeks is
+  // 84 days, comfortably inside the 90-day fetch window.
+  WORKLOAD_WEEKS: 12,
+
   // Presentation
   STALE_SNAPSHOT_HOURS: 12,
   STALE_VERIFIED_DAYS: 180,

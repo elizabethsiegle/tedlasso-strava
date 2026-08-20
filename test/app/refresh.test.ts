@@ -2,6 +2,7 @@ import { env } from "cloudflare:workers";
 import { beforeEach, describe, expect, it } from "vitest";
 import { runRefresh } from "../../src/app/refresh";
 import { getMood } from "../../src/data/moods";
+import { TUNING } from "../../src/domain/tuning";
 import { KvStore } from "../../src/infrastructure/store/kv";
 import { StravaClient } from "../../src/infrastructure/strava/client";
 import type { Snapshot } from "../../src/types";
@@ -243,6 +244,29 @@ describe("runRefresh", () => {
     expect(raw).not.toContain("summaryPolyline");
     expect(raw).not.toContain("_p~iF");
     expect(raw).not.toContain('"lat"');
+  });
+
+  it("carries a chartable workload into the snapshot", async () => {
+    // The chart and the receipts are built from the same fetched list, so a week
+    // can never mean one thing in the figure and another in the table above it.
+    await new KvStore(kv()).putRefreshToken("ref-old");
+    const result = await runRefresh(deps(happyClient()), NOW);
+    expect(result.ok).toBe(true);
+    const snap = JSON.parse((await kv().get("snapshot/current")) as string) as Snapshot;
+    expect(snap.workload?.weeks).toHaveLength(TUNING.WORKLOAD_WEEKS);
+    // ACTIVITY is 2400s on the day of NOW, so it lands in the newest bucket.
+    const newest = snap.workload?.weeks[TUNING.WORKLOAD_WEEKS - 1];
+    expect(newest?.count).toBe(1);
+    expect(newest?.movingTimeS).toBe(2400);
+    expect(snap.workload?.weeks.reduce((t, w) => t + w.count, 0)).toBe(1);
+  });
+
+  it("stores no workload at all when there is nothing to chart", async () => {
+    await new KvStore(kv()).putRefreshToken("ref-old");
+    const result = await runRefresh(deps(happyClient([])), NOW);
+    expect(result.ok).toBe(true);
+    const snap = JSON.parse((await kv().get("snapshot/current")) as string) as Snapshot;
+    expect(snap.workload).toBeNull();
   });
 
   it("still writes a snapshot when the athlete has no activities", async () => {
