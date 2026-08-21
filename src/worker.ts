@@ -1,9 +1,10 @@
 import { handleCallback, handleLogin, hasSetupKey, type AuthDeps } from "./app/auth";
-import { renderCatalogue } from "./app/catalogue";
-import { renderPage } from "./app/render";
+import { renderCatalogue, type CatalogueVoice } from "./app/catalogue";
+import { renderPage, type PageVoice } from "./app/render";
 import { runRefresh } from "./app/refresh";
 import { handleTile } from "./app/tiles";
-import { getMood, type Mood } from "./data/moods";
+import { MACHIAVELLI_MOODS, getMachiavelliMood } from "./data/machiavelli";
+import { MOODS, getMood, type Mood } from "./data/moods";
 import { pickQuote } from "./domain/quote";
 import { TUNING } from "./domain/tuning";
 import { KvStore } from "./infrastructure/store/kv";
@@ -36,6 +37,86 @@ const EMPTY_PREVIEW_SNAPSHOT: Snapshot = {
   },
   route: null,
 };
+
+/**
+ * A voice is a catalogue plus the URLs that belong to it. Both voices read the
+ * SAME snapshot: the mood is chosen from Strava data by the engine, and each
+ * catalogue only supplies the words for the id it picked. Nothing about a voice
+ * is persisted, so switching costs a page view rather than a refresh.
+ */
+interface Voice {
+  path: string;
+  lookup: (id: string) => Mood | undefined;
+  /**
+   * Whether the stored quote has to be re-picked for this voice. `refresh.ts`
+   * writes the default catalogue's pick into the snapshot, so that voice is
+   * already correct and every other one has to restate it.
+   */
+  restate: boolean;
+  page: PageVoice;
+  catalogue: CatalogueVoice;
+}
+
+/** The opening entry, used before any snapshot exists. */
+function fallbacks(moods: Mood[]): Pick<PageVoice, "fallbackMood" | "fallbackQuote"> {
+  const mood = moods.find((m) => m.id === "preseason");
+  if (!mood) throw new Error("a catalogue is missing the 'preseason' entry");
+  return {
+    fallbackMood: { id: mood.id, name: mood.name, accent: mood.accent },
+    fallbackQuote: mood.quotes[0]!,
+  };
+}
+
+const TED_LASSO: Voice = {
+  path: "/",
+  lookup: getMood,
+  restate: false,
+  page: {
+    other: { href: "/machiavelli", label: "Read it as Machiavelli" },
+    catalogueHref: "/catalogue",
+    ...fallbacks(MOODS),
+  },
+  catalogue: { moods: MOODS, title: "Catalogue", sourcePath: "src/data/moods.ts", boardHref: "/" },
+};
+
+const MACHIAVELLI: Voice = {
+  path: "/machiavelli",
+  lookup: getMachiavelliMood,
+  restate: true,
+  page: {
+    other: { href: "/", label: "Read it as Ted Lasso" },
+    catalogueHref: "/catalogue/machiavelli",
+    ...fallbacks(MACHIAVELLI_MOODS),
+  },
+  catalogue: {
+    moods: MACHIAVELLI_MOODS,
+    title: "Catalogue: Machiavelli",
+    sourcePath: "src/data/machiavelli.ts",
+    boardHref: "/machiavelli",
+  },
+};
+
+const VOICES: Voice[] = [TED_LASSO, MACHIAVELLI];
+
+/**
+ * Say the stored mood in this voice. Seeded with the snapshot's refresh time
+ * rather than `nowMs`, so the pairing holds still until the next refresh exactly
+ * as the persisted one does, instead of reshuffling on every reload.
+ *
+ * An id this catalogue has no entry for is left alone rather than blanked: a
+ * missing translation should read as the other voice, not as an empty page.
+ */
+function inVoice(snapshot: Snapshot, voice: Voice): Snapshot {
+  const mood = voice.lookup(snapshot.mood.id);
+  if (!mood) return snapshot;
+  const { quote, media } = pickQuote(mood, snapshot.refreshedAt);
+  return {
+    ...snapshot,
+    mood: { id: mood.id, name: mood.name, accent: mood.accent },
+    quote,
+    gif: media ? { url: media.url, alt: media.alt, verifiedOn: media.verifiedOn, kind: media.kind } : null,
+  };
+}
 
 export interface Env {
   STORE: KVNamespace;
@@ -186,20 +267,22 @@ export default {
 
     // Derived entirely from bundled data — no KV read, no Strava call — so the
     // catalogue stays readable even when there is no snapshot yet.
-    if (url.pathname === "/catalogue") {
-      return new Response(renderCatalogue(nowMs), {
+    const catalogueVoice = VOICES.find((v) => v.page.catalogueHref === url.pathname);
+    if (catalogueVoice) {
+      return new Response(renderCatalogue(nowMs, catalogueVoice.catalogue), {
         headers: { "content-type": "text/html; charset=utf-8" },
       });
     }
 
-    if (url.pathname === "/") {
+    const voice = VOICES.find((v) => v.path === url.pathname);
+    if (voice) {
       const store = new KvStore(env.STORE);
       const [snapshot, health] = await Promise.all([store.getSnapshot(), store.getHealth()]);
 
       const previewId = url.searchParams.get("preview");
-      const previewMood = previewId ? getMood(previewId) : undefined;
+      const previewMood = previewId ? voice.lookup(previewId) : undefined;
 
-      let shown = snapshot;
+      let shown = snapshot && voice.restate ? inVoice(snapshot, voice) : snapshot;
       let previewNotice: string | null = null;
 
       if (previewMood) {
@@ -224,6 +307,7 @@ export default {
           setupKey: env.SETUP_KEY,
           showBasemap: resolveBasemap(env.BASEMAP),
           tz: env.TIMEZONE || "UTC",
+          voice: voice.page,
         }),
         { headers: { "content-type": "text/html; charset=utf-8" } },
       );

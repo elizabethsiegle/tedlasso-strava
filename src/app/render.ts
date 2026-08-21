@@ -34,6 +34,23 @@ export function isGifStale(verifiedOn: string, nowMs: number): boolean {
   return (nowMs - verifiedMs) / DAY_MS > TUNING.STALE_VERIFIED_DAYS;
 }
 
+/**
+ * Everything the renderer needs to know about a voice: where its sibling and
+ * its catalogue live, and what to say before the first snapshot exists. The
+ * quotes themselves arrive already chosen, inside the snapshot, so the renderer
+ * never reads a catalogue.
+ */
+export interface PageVoice {
+  /** The same page in the other voice, offered in the footer. */
+  other: { href: string; label: string };
+  /** This voice's catalogue page. */
+  catalogueHref: string;
+  /** Heading and accent to use when there is no snapshot yet. */
+  fallbackMood: { id: string; name: string; accent: string };
+  /** The quote to show in that same empty state. */
+  fallbackQuote: { text: string; character: string };
+}
+
 export interface PageView {
   snapshot: Snapshot | null;
   health: Health;
@@ -43,6 +60,12 @@ export interface PageView {
   setupKey?: string;
   /** The athlete's timezone (env.TIMEZONE), for calendar-relative wording. */
   tz?: string;
+  /**
+   * Which voice this page speaks. Optional: with none, the page behaves exactly
+   * as it did when there was only one catalogue, so the renderer stays ignorant
+   * of how many voices exist and its tests do not have to care.
+   */
+  voice?: PageVoice;
   /** Defaults to on. `BASEMAP=off` turns the tile layer off without a re-fetch. */
   showBasemap?: boolean;
 }
@@ -532,12 +555,16 @@ export function renderPage(view: PageView): string {
   const showBasemap = view.showBasemap !== false;
   const tz = view.tz || "UTC";
 
-  const mood = snapshot?.mood ?? {
-    id: PRESEASON_MOOD.id,
-    name: PRESEASON_MOOD.name,
-    accent: PRESEASON_MOOD.accent,
-  };
-  const quote = snapshot?.quote ?? PRESEASON_MOOD.quotes[0]!;
+  // Before the first snapshot there is no chosen mood, so the empty state falls
+  // back to this voice's own opening entry. Without that, the Machiavelli page
+  // would introduce itself in Ted Lasso's words.
+  const mood = snapshot?.mood ??
+    view.voice?.fallbackMood ?? {
+      id: PRESEASON_MOOD.id,
+      name: PRESEASON_MOOD.name,
+      accent: PRESEASON_MOOD.accent,
+    };
+  const quote = snapshot?.quote ?? view.voice?.fallbackQuote ?? PRESEASON_MOOD.quotes[0]!;
 
   const ageHours = snapshot ? (nowMs - snapshot.refreshedAt) / 3_600_000 : 0;
   const stale = snapshot !== null && ageHours > TUNING.STALE_SNAPSHOT_HOURS;
@@ -615,6 +642,13 @@ export function renderPage(view: PageView): string {
        </form>`
     : "";
 
+  // A page nobody can find is not shipped: the two voices link to each other
+  // from the footer rather than living at a URL you have to be told about.
+  const otherVoiceLink = view.voice
+    ? ` · <a href="${escapeHtml(view.voice.other.href)}">${escapeHtml(view.voice.other.label)}</a>`
+    : "";
+  const catalogueHref = view.voice?.catalogueHref ?? "/catalogue";
+
   const refreshedLabel = snapshot
     ? `Refreshed ${formatUtc(snapshot.refreshedAt)}`
     : "Not yet refreshed";
@@ -661,7 +695,7 @@ export function renderPage(view: PageView): string {
   ${snapshot ? results(snapshot) : ""}
 
   <footer class="footer">
-    <span><a href="https://www.strava.com" rel="noopener">Powered by Strava</a> · <a href="/catalogue">Quote &amp; GIF catalogue</a></span>
+    <span><a href="https://www.strava.com" rel="noopener">Powered by Strava</a> · <a href="${escapeHtml(catalogueHref)}">Quote &amp; GIF catalogue</a>${otherVoiceLink}</span>
     <span class="footer-meta">${footerMeta}</span>
     <span>${refreshButton}</span>
   </footer>

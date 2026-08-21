@@ -1,16 +1,38 @@
-import { MOODS } from "../data/moods";
+import { MOODS, type Mood } from "../data/moods";
 import { TUNING } from "../domain/tuning";
 import { escapeHtml, isGifStale } from "./render";
 import { STYLES } from "./styles";
 
 /**
- * The quote and GIF catalogue, rendered from `src/data/moods.ts` — the same
- * versioned source the engine picks from, not a copy. Nothing here is fetched
- * or stored: if this page and the mood engine ever disagreed, one of them would
- * be reading stale data, so there is deliberately only one place to read.
+ * Which catalogue this page is listing. Defaults to the Ted Lasso one, so
+ * `renderCatalogue(nowMs)` still means what it always meant.
  */
-export function renderCatalogue(nowMs: number): string {
-  const totals = MOODS.reduce(
+export interface CatalogueVoice {
+  moods: Mood[];
+  /** Heading, e.g. "Catalogue" or "Catalogue: Machiavelli". */
+  title: string;
+  /** The file the entries actually live in, named in the intro copy. */
+  sourcePath: string;
+  /** The board this catalogue speaks for: preview links and the back link. */
+  boardHref: string;
+}
+
+const TED_LASSO_CATALOGUE: CatalogueVoice = {
+  moods: MOODS,
+  title: "Catalogue",
+  sourcePath: "src/data/moods.ts",
+  boardHref: "/",
+};
+
+/**
+ * The quote and GIF catalogue, rendered from the versioned source the engine
+ * picks from — the same array, not a copy. Nothing here is fetched or stored: if
+ * this page and the mood engine ever disagreed, one of them would be reading
+ * stale data, so there is deliberately only one place to read.
+ */
+export function renderCatalogue(nowMs: number, voice: CatalogueVoice = TED_LASSO_CATALOGUE): string {
+  const moods = voice.moods;
+  const totals = moods.reduce(
     (acc, m) => ({
       quotes: acc.quotes + m.quotes.length,
       media: acc.media + m.media.length,
@@ -19,7 +41,7 @@ export function renderCatalogue(nowMs: number): string {
     { quotes: 0, media: 0, stale: 0 },
   );
 
-  const sections = MOODS.map((mood) => {
+  const sections = moods.map((mood) => {
     const quotes = mood.quotes
       .map(
         (q) => `<tr>
@@ -50,7 +72,7 @@ export function renderCatalogue(nowMs: number): string {
         <span>id <code>${escapeHtml(mood.id)}</code></span>
         <span>verified ${escapeHtml(mood.verifiedOn)}</span>
         <span>${mood.quotes.length} quotes · ${mood.media.length} media</span>
-        <a href="/?preview=${encodeURIComponent(mood.id)}">Preview this mood</a>
+        <a href="${escapeHtml(voice.boardHref)}?preview=${encodeURIComponent(mood.id)}">Preview this mood</a>
       </p>
       <table class="cat-table"><tbody>${quotes}</tbody></table>
       <table class="cat-table cat-gifs"><tbody>${media}</tbody></table>
@@ -62,16 +84,16 @@ export function renderCatalogue(nowMs: number): string {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Catalogue — tedlasso-strava</title>
+<title>${escapeHtml(voice.title)} — tedlasso-strava</title>
 <meta name="robots" content="noindex">
 <style>${STYLES}</style>
 </head>
 <body>
 <main class="sheet">
   <header class="masthead">
-    <h1 class="mood-name">Catalogue</h1>
+    <h1 class="mood-name">${escapeHtml(voice.title)}</h1>
     <div class="masthead-meta">
-      ${MOODS.length} moods · ${totals.quotes} quotes · ${totals.media} media${
+      ${moods.length} moods · ${totals.quotes} quotes · ${totals.media} media${
         totals.stale > 0 ? ` · <span class="stale-marker">${totals.stale} unverified</span>` : ""
       }
     </div>
@@ -79,7 +101,7 @@ export function renderCatalogue(nowMs: number): string {
 
   <p class="cat-intro">
     Every quote, GIF, still and clip the site can serve, read straight from the versioned
-    catalogue in <code>src/data/moods.ts</code>. A mood is chosen from your Strava
+    catalogue in <code>${escapeHtml(voice.sourcePath)}</code>. A mood is chosen from your Strava
     activity; the quote and GIF within it are seeded from the snapshot's refresh
     time, so the same refresh always yields the same pairing.
   </p>
@@ -87,7 +109,7 @@ export function renderCatalogue(nowMs: number): string {
   ${sections}
 
   <footer class="footer">
-    <span><a href="/">&larr; Back to the matchday report</a></span>
+    <span><a href="${escapeHtml(voice.boardHref)}">&larr; Back to the matchday report</a></span>
     <span><a href="https://www.strava.com" rel="noopener">Powered by Strava</a></span>
   </footer>
 </main>
