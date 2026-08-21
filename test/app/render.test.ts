@@ -13,7 +13,7 @@ function snapshot(overrides: Partial<Snapshot> = {}): Snapshot {
     mood: { id: "believe", name: "Believe", accent: "#F2C14E" },
     quote: { text: "Believe.", character: "AFC Richmond locker room" },
     gif: {
-      url: "https://example.test/believe.gif",
+      url: "/media/believe/0",
       alt: "The Believe sign above the office door.",
       verifiedOn: "2026-08-14",
     },
@@ -74,7 +74,7 @@ describe("renderPage", () => {
 
   it("shows the gif with its alt text", () => {
     const html = renderPage(view());
-    expect(html).toContain("https://example.test/believe.gif");
+    expect(html).toContain("/media/believe/0");
     expect(html).toContain("The Believe sign above the office door.");
   });
 
@@ -400,12 +400,37 @@ describe("renderPage", () => {
   });
 
   describe("media kinds", () => {
+    it("refuses to auto-load media from another origin", () => {
+      // A snapshot written before the media proxy existed carries an upstream
+      // URL. Rendering it would put the image host in every visitor's read
+      // path, so the picture is dropped until the next refresh instead.
+      const s = snapshot({
+        gif: { url: "https://upload.wikimedia.org/x.jpg", alt: "An off-origin still.", verifiedOn: "2026-08-14", kind: "image" },
+      });
+      const html = renderPage(view({ snapshot: s }));
+      expect(html).not.toContain("upload.wikimedia.org");
+      expect(html).not.toContain('<img class="gif"');
+      // And the second hero column must not open up around nothing. Matched on
+      // the markup, not the bare class name: STYLES is inlined into the page,
+      // so the selector is always present in the stylesheet.
+      expect(html).not.toContain('class="hero hero--with-gif"');
+    });
+
+    it("still offers an off-origin video as a link, because following it is a choice", () => {
+      const s = snapshot({
+        gif: { url: "https://example.test/clip.mp4", alt: "A clip.", verifiedOn: "2026-08-14", kind: "video" },
+      });
+      const html = renderPage(view({ snapshot: s }));
+      expect(html).toContain('class="hero-video" href="https://example.test/clip.mp4"');
+      expect(html).toContain('class="hero hero--with-gif"');
+    });
+
     it("renders a still image inline, exactly as it renders a gif", () => {
       const still = snapshot({
-        gif: { url: "https://example.test/meme.png", alt: "An engraved portrait still.", verifiedOn: "2026-08-14", kind: "image" },
+        gif: { url: "/media/believe/0", alt: "An engraved portrait still.", verifiedOn: "2026-08-14", kind: "image" },
       });
       const html = renderPage(view({ snapshot: still }));
-      expect(html).toContain('<img class="gif" src="https://example.test/meme.png"');
+      expect(html).toContain('<img class="gif" src="/media/believe/0"');
       // Substring, not class match: the inlined stylesheet defines .hero-video
       // regardless of what is rendered, so assert on the attribute.
       expect(html).not.toContain('class="hero-video"');
@@ -427,10 +452,10 @@ describe("renderPage", () => {
 
     it("treats a snapshot with no kind as a gif, not as a broken entry", () => {
       const legacy = snapshot({
-        gif: { url: "https://example.test/old.gif", alt: "A gif stored before kinds existed.", verifiedOn: "2026-08-14" },
+        gif: { url: "/media/believe/0", alt: "A gif stored before kinds existed.", verifiedOn: "2026-08-14" },
       });
       const html = renderPage(view({ snapshot: legacy }));
-      expect(html).toContain('<img class="gif" src="https://example.test/old.gif"');
+      expect(html).toContain('<img class="gif" src="/media/believe/0"');
       expect(html).not.toContain('class="hero-video"');
     });
   });
@@ -474,7 +499,7 @@ describe("renderPage", () => {
 
     it("shows a staleness marker for a GIF verified 200 days ago", () => {
       const verifiedOn = new Date(NOW - 200 * DAY_MS).toISOString().slice(0, 10);
-      const s = snapshot({ gif: { url: "https://example.test/old.gif", alt: "An old GIF.", verifiedOn } });
+      const s = snapshot({ gif: { url: "/media/believe/0", alt: "An old GIF.", verifiedOn } });
       const html = renderPage(view({ snapshot: s }));
       expect(html).toContain("stale-marker");
       expect(html).toContain(`${TUNING.STALE_VERIFIED_DAYS}+`);
@@ -485,7 +510,7 @@ describe("renderPage", () => {
       // against NOW is exactly STALE_VERIFIED_DAYS*DAY_MS -- a date-only
       // string would truncate to midnight and drift past the boundary.
       const verifiedOn = new Date(NOW - TUNING.STALE_VERIFIED_DAYS * DAY_MS).toISOString();
-      const s = snapshot({ gif: { url: "https://example.test/edge.gif", alt: "An edge-case GIF.", verifiedOn } });
+      const s = snapshot({ gif: { url: "/media/believe/0", alt: "An edge-case GIF.", verifiedOn } });
       const html = renderPage(view({ snapshot: s }));
       expect(html).not.toContain("stale-marker");
     });
@@ -496,7 +521,7 @@ describe("renderPage", () => {
     });
 
     it("treats an unparseable verifiedOn as not-stale rather than throwing", () => {
-      const s = snapshot({ gif: { url: "https://example.test/bad.gif", alt: "A GIF.", verifiedOn: "not-a-date" } });
+      const s = snapshot({ gif: { url: "/media/believe/0", alt: "A GIF.", verifiedOn: "not-a-date" } });
       expect(() => renderPage(view({ snapshot: s }))).not.toThrow();
       expect(renderPage(view({ snapshot: s }))).not.toContain("stale-marker");
     });

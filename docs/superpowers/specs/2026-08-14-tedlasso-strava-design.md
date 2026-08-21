@@ -616,12 +616,25 @@ Vars: `TIMEZONE` (default `America/Los_Angeles`), `REDIRECT_URI`, `PRIVACY_TRIM_
     elsewhere (matchday report, form guide) is kept deliberately: a Renaissance strategist's
     matchday programme is the joke, not an oversight.
 
-  **Outstanding, and worth stating plainly:** the ten images are fetched by the visitor's
-  browser straight from `upload.wikimedia.org`. That is the same shape of leak the basemap
-  decision refuses for tiles, where every tile is proxied through `/tiles/` so the provider
-  sees one Worker rather than every visitor. The Giphy URLs had the same problem before this
-  change, so it is not a regression, but the tile proxy is the pattern and media should follow
-  it.
+  **Resolved 2026-08-21, in the same pass:** the images were initially fetched by the
+  visitor's browser straight from `upload.wikimedia.org`, which is the same shape of leak the
+  basemap decision refuses for tiles. They now go through `/media/{moodId}/{index}`
+  (`src/app/media.ts`), so the image host sees one Worker rather than every visitor, exactly as
+  the tile proxy does. The Giphy URLs had the same problem before the pivot, so this closes a
+  hole that predates it.
+
+  What makes the media proxy safe is that it is not a proxy for *URLs*. A tile is validated
+  arithmetically, but there is no equivalent check for an arbitrary address, so the path names
+  a catalogue entry and the upstream URL is read from `src/data/moods.ts`. Nothing a caller
+  sends reaches `fetch`, which is the difference between a proxy and an SSRF hole. Host and
+  content-type allowlists sit behind that as defence in depth, against a future catalogue edit
+  rather than against a request. Videos resolve to null: they are click-through links, never
+  auto-loaded, so there is nothing to proxy.
+
+  The renderer fails closed to match: a snapshot whose stored media URL is not a `/media/`
+  path loses its picture until the next refresh instead of falling back to the upstream
+  address. `hasGif` is derived from what will actually render, so the second hero column never
+  opens up around nothing.
 - **Ghost trails deferred.** Overlaying all 90 days of routes was considered and set aside
   for the first build. It needs outlier handling for travel and roughly triples the route
   payload. Revisit once the single-route renderer is proven.

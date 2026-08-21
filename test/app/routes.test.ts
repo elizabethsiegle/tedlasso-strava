@@ -90,6 +90,38 @@ describe("tile route", () => {
   });
 });
 
+describe("media route", () => {
+  it("404s a path that does not name a catalogue entry, without going upstream", async () => {
+    for (const path of ["/media/not-a-mood/0", "/media/believe/9", "/media/believe", "/media/believe/0.jpg"]) {
+      const res = await worker.fetch(new Request(`https://example.test${path}`), testEnv(), ctx());
+      expect(res.status, path).toBe(404);
+    }
+  });
+
+  it("rejects a write to the media proxy", async () => {
+    const res = await worker.fetch(
+      new Request("https://example.test/media/believe/0", { method: "DELETE" }),
+      testEnv(),
+      ctx(),
+    );
+    expect(res.status).toBe(405);
+  });
+
+  it("cannot be pointed at an arbitrary url", async () => {
+    // The path names a catalogue entry, so there is no url to smuggle in.
+    for (const path of [
+      "/media/https:/evil.test/x.jpg",
+      "/media/believe/0?url=https://evil.test/x.jpg",
+      "/media/../secret",
+    ]) {
+      const res = await worker.fetch(new Request(`https://example.test${path}`), testEnv(), ctx());
+      expect([404, 200]).toContain(res.status);
+      // Whatever happens, it is never evil.test's bytes.
+      if (res.status === 200) expect(res.headers.get("content-type")).toMatch(/^image\//);
+    }
+  });
+});
+
 describe("resolvePrivacyTrim", () => {
   it("falls back to the default for an absent var", () => {
     expect(resolvePrivacyTrim(undefined)).toBe(TUNING.DEFAULT_PRIVACY_TRIM_M);

@@ -6,6 +6,7 @@ import { pickQuote } from "../domain/quote";
 import { buildRoute } from "../domain/route";
 import { DAY_MS, TUNING } from "../domain/tuning";
 import { buildWorkload } from "../domain/workload";
+import { mediaPath } from "./media";
 import type { KvStore } from "../infrastructure/store/kv";
 import {
   StravaAuthError,
@@ -71,7 +72,21 @@ export async function runRefresh(deps: RefreshDeps, nowMs: number): Promise<Refr
 
     const mood = getMood(selection.moodId);
     if (!mood) throw new Error(`selectMood returned unknown mood id: ${selection.moodId}`);
-    const { quote, media } = pickQuote(mood, nowMs);
+    const { quote, media, mediaIndex } = pickQuote(mood, nowMs);
+
+    // What the page will load automatically has to be same-origin, so the
+    // snapshot stores the proxy path, not the upstream URL. A video is the one
+    // exception: it is a link the reader chooses to follow, so it stays
+    // absolute and no request is made on their behalf.
+    const art =
+      media !== null && mediaIndex !== null
+        ? {
+            url: media.kind === "video" ? media.url : mediaPath(mood.id, mediaIndex),
+            alt: media.alt,
+            verifiedOn: media.verifiedOn,
+            kind: media.kind,
+          }
+        : null;
 
     // buildRoute needs the full Activity (it carries the polyline); Facts.last
     // is a trimmed projection that does not. So sort the raw activities here.
@@ -109,7 +124,7 @@ export async function runRefresh(deps: RefreshDeps, nowMs: number): Promise<Refr
       refreshedAt: nowMs,
       mood: { id: mood.id, name: mood.name, accent: mood.accent },
       quote,
-      gif: media ? { url: media.url, alt: media.alt, verifiedOn: media.verifiedOn, kind: media.kind } : null,
+      gif: art,
       scores,
       reasons: selection.reasons,
       facts: {

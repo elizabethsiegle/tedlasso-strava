@@ -67,7 +67,17 @@ Concretely, on this project:
 - The route is drawn over a real basemap, and every tile is proxied through our own
   `/tiles/{z}/{x}/{y}.png` (`src/app/tiles.ts`). The browser must never request a tile from
   the upstream host directly: one Worker talking to the tile provider leaks nothing about
-  visitors, a thousand browsers doing it leaks all of them. Basemap credit for OpenStreetMap
+  visitors, a thousand browsers doing it leaks all of them.
+- The same rule covers the catalogue's artwork, proxied at `/media/{moodId}/{index}`
+  (`src/app/media.ts`). Nothing the page loads on its own may point off-origin. Two details
+  are load-bearing and must not be "simplified" away:
+  - The path names a **catalogue entry**, never a URL. A tile can be validated arithmetically;
+    an arbitrary URL cannot, so the upstream address is read from the versioned catalogue and
+    nothing a caller sends ever reaches `fetch`. Never add a `?url=` parameter to this.
+  - The renderer **fails closed**: `renderPage` drops an image whose stored URL is not a
+    `/media/` path, so a snapshot written before the proxy loses its picture until the next
+    refresh rather than leaking. A video is the one exemption, because it is a link the reader
+    chooses to follow rather than a request the page makes for them. Basemap credit for OpenStreetMap
   and CARTO is rendered on the page, as their terms require.
 - Two route path strings exist and are never interchangeable: `RouteRender.pathD` is
   equirectangular, normalised into an abstract 1000x1000 box, and `basemap.pathD` is Web

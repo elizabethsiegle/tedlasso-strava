@@ -601,19 +601,33 @@ export function renderPage(view: PageView): string {
     );
   }
 
-  const hasGif = Boolean(snapshot?.gif);
+  // Anything the page loads by itself has to be same-origin, or the image host
+  // ends up in the read path for every visitor, which is the whole reason
+  // src/app/media.ts exists. So this fails closed: a snapshot written before the
+  // proxy carries an upstream URL, and it loses the picture until the next
+  // refresh rather than leaking.
+  const art = snapshot?.gif ?? null;
+  const showArt = art !== null && (art.kind === "video" || art.url.startsWith("/media/"));
+
+  // Tied to what will actually render, not to whether the snapshot has the key:
+  // the second hero column must never open up around nothing.
+  const hasGif = showArt;
+
   // A video is offered as a link, never an embedded player: an iframe would put
   // a third party in the read path and hand the loudest object on the page to
-  // something that isn't the quote. Gifs and stills both render as <img> —
-  // there is nothing to branch on between them.
-  const gifColumn = !snapshot?.gif
-    ? ""
-    : snapshot.gif.kind === "video"
-      ? `<div class="hero-gif"><a class="hero-video" href="${escapeHtml(snapshot.gif.url)}" rel="noopener">` +
-        `<span class="hero-video-cue">Watch the clip</span>` +
-        `<span class="hero-video-alt">${escapeHtml(snapshot.gif.alt)}</span></a></div>`
-      : `<div class="hero-gif"><img class="gif" src="${escapeHtml(snapshot.gif.url)}" alt="${escapeHtml(snapshot.gif.alt)}" ` +
-        `loading="eager" decoding="async"></div>`;
+  // something that isn't the quote. It is also why a video keeps its absolute
+  // URL and is exempt from the check above: following it is the reader's
+  // choice, not a request the page makes on their behalf. Gifs and stills both
+  // render as <img>, with nothing to branch on between them.
+  const gifColumn =
+    art === null || !showArt
+      ? ""
+      : art.kind === "video"
+        ? `<div class="hero-gif"><a class="hero-video" href="${escapeHtml(art.url)}" rel="noopener">` +
+          `<span class="hero-video-cue">Watch the clip</span>` +
+          `<span class="hero-video-alt">${escapeHtml(art.alt)}</span></a></div>`
+        : `<div class="hero-gif"><img class="gif" src="${escapeHtml(art.url)}" alt="${escapeHtml(art.alt)}" ` +
+          `loading="eager" decoding="async"></div>`;
 
   const reasons = snapshot?.reasons.length
     ? `<ul class="reasons">${snapshot.reasons.map((r) => `<li>${escapeHtml(r)}</li>`).join("")}</ul>`

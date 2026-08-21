@@ -2,6 +2,7 @@ import { handleCallback, handleLogin, hasSetupKey, type AuthDeps } from "./app/a
 import { renderCatalogue } from "./app/catalogue";
 import { renderPage } from "./app/render";
 import { runRefresh } from "./app/refresh";
+import { handleMedia } from "./app/media";
 import { handleTile } from "./app/tiles";
 import { getMood, type Mood } from "./data/moods";
 import { pickQuote } from "./domain/quote";
@@ -179,6 +180,9 @@ export default {
     // Checked before the cheap equality routes below because tiles are the
     // only path with a variable shape, and there are a dozen of them per view.
     if (url.pathname.startsWith("/tiles/")) return handleTile(request, ctx);
+    // Same reasoning as tiles: the catalogue's artwork is proxied so the image
+    // host sees this Worker rather than every visitor.
+    if (url.pathname.startsWith("/media/")) return handleMedia(request, ctx);
 
     if (url.pathname === "/auth/login") return handleLogin(request, buildDeps(env));
     if (url.pathname === "/auth/callback") return handleCallback(request, buildDeps(env), nowMs);

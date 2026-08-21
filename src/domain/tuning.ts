@@ -63,6 +63,10 @@ export const TUNING = {
   // 84 days, comfortably inside the 90-day fetch window.
   WORKLOAD_WEEKS: 12,
 
+  // Catalogue artwork, proxied same-origin (src/app/media.ts). Public-domain
+  // scans that never change, so the cache window matches the tiles'.
+  MEDIA_MAX_AGE_S: 2_592_000,
+
   // Presentation
   // Rows in the published results table. Every row is one more activity id on
   // a public page, so this stays small: enough to show the week the mood copy

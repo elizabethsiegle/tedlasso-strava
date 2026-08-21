@@ -14,9 +14,20 @@ export function fnv1a(input: string): number {
   return hash >>> 0;
 }
 
-export function pickQuote(mood: Mood, seed: number): { quote: Quote; media: Media | null } {
+/**
+ * `mediaIndex` is the position of the chosen entry in `mood.media`, and it is
+ * null exactly when `media` is. The caller needs it to build the same-origin
+ * proxy path (see src/app/media.ts), which names a catalogue entry rather than
+ * carrying an upstream URL.
+ */
+export function pickQuote(
+  mood: Mood,
+  seed: number,
+): { quote: Quote; media: Media | null; mediaIndex: number | null } {
   const hash = fnv1a(`${seed}${mood.id}`);
   const quote = mood.quotes[hash % mood.quotes.length] as Quote;
-  const media = mood.media.length > 0 ? (mood.media[hash % mood.media.length] as Media) : null;
-  return { quote, media };
+  if (mood.media.length === 0) return { quote, media: null, mediaIndex: null };
+
+  const mediaIndex = hash % mood.media.length;
+  return { quote, media: mood.media[mediaIndex] as Media, mediaIndex };
 }
