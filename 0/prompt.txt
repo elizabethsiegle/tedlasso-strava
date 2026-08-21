@@ -1,0 +1,17 @@
+push and deploy
+
+---
+
+do not change anything, just explain to me the "refreshed" and "next run" bit at the bottom of the page
+
+---
+
+ok the local version has an off last workout. the version deployed to cloudflare workers has the correct last workout
+
+---
+
+reconcile
+
+---
+
+run locally to test please
