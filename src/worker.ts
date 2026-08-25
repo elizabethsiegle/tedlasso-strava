@@ -15,16 +15,16 @@ function requireMood(id: string): Mood {
   return mood;
 }
 
-// The catalogue is the single source for "preseason"'s id/name/accent — never
-// hardcoded again here (see also app/render.ts's PRESEASON_MOOD, which reads
+// The catalogue is the single source for "peacetime"'s id/name/accent — never
+// hardcoded again here (see also app/render.ts's PEACETIME_MOOD, which reads
 // from the same catalogue entry).
-const PRESEASON_MOOD = requireMood("preseason");
+const PEACETIME_MOOD = requireMood("peacetime");
 
 /** The state shown when previewing a mood with no live snapshot yet. */
 const EMPTY_PREVIEW_SNAPSHOT: Snapshot = {
   version: 1,
   refreshedAt: 0,
-  mood: { id: PRESEASON_MOOD.id, name: PRESEASON_MOOD.name, accent: PRESEASON_MOOD.accent },
+  mood: { id: PEACETIME_MOOD.id, name: PEACETIME_MOOD.name, accent: PEACETIME_MOOD.accent },
   quote: { text: "", character: "" },
   gif: null,
   scores: { consistency: 0, charge: 0 },

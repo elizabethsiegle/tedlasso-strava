@@ -61,8 +61,8 @@ function rejectingKv(failOn: (key: string) => boolean = () => true): KVNamespace
 
 async function seedSnapshot(): Promise<Snapshot> {
   const existing: Snapshot = {
-    version: 1, refreshedAt: 1, mood: { id: "biscuits", name: "Biscuits", accent: "#D98B5F" },
-    quote: { text: "Biscuits with the boss.", character: "Ted Lasso" }, gif: null,
+    version: 1, refreshedAt: 1, mood: { id: "benefit-of-time", name: "The Benefit of Time", accent: "#B95F2C" },
+    quote: { text: "Time drives everything before it.", character: "Machiavelli, The Prince" }, gif: null,
     scores: { consistency: 1, charge: 1 }, reasons: ["seeded"],
     facts: { last: null, daysSinceLast: null, countLast7: 0, baselineWeekly: 0, streakDays: 0, totalActivities: 0 },
     route: null,
@@ -273,20 +273,21 @@ describe("runRefresh", () => {
     const result = await runRefresh(deps(happyClient([])), NOW);
     expect(result.ok).toBe(true);
     const snap = await new KvStore(kv()).getSnapshot();
-    expect(snap!.mood.id).toBe("preseason");
+    expect(snap!.mood.id).toBe("peacetime");
     expect(snap!.route).toBeNull();
   });
 
-  it("carries the chosen GIF's verifiedOn from the catalogue into the snapshot", async () => {
+  it("writes a null gif for a mood the catalogue ships without media", async () => {
     await new KvStore(kv()).putRefreshToken("ref-old");
-    // Zero activities deterministically selects "preseason", which the
-    // catalogue ships with exactly one GIF -- no seed-dependent branching to
-    // account for.
+    // Zero activities deterministically selects "peacetime" -- no
+    // seed-dependent branching to account for. The catalogue has been all
+    // text since the Machiavelli rebrand, so the honest snapshot value is
+    // null rather than a stale GIF; pickQuote's media-carrying branch is
+    // pinned on a synthetic mood in test/domain/quote.test.ts.
     await runRefresh(deps(happyClient([])), NOW);
     const snap = await new KvStore(kv()).getSnapshot();
-    const catalogueGif = getMood("preseason")!.media[0]!;
-    expect(snap!.gif).not.toBeNull();
-    expect(snap!.gif!.verifiedOn).toBe(catalogueGif.verifiedOn);
+    expect(getMood("peacetime")!.media).toEqual([]);
+    expect(snap!.gif).toBeNull();
   });
 
   it("classifies a non-Strava failure as \"error\" without touching the snapshot or needsReauth", async () => {

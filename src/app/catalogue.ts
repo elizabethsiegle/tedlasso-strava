@@ -4,7 +4,7 @@ import { escapeHtml, isGifStale } from "./render";
 import { STYLES } from "./styles";
 
 /**
- * The quote and GIF catalogue, rendered from `src/data/moods.ts` — the same
+ * The quote catalogue, rendered from `src/data/moods.ts` — the same
  * versioned source the engine picks from, not a copy. Nothing here is fetched
  * or stored: if this page and the mood engine ever disagreed, one of them would
  * be reading stale data, so there is deliberately only one place to read.
@@ -62,7 +62,7 @@ export function renderCatalogue(nowMs: number): string {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Catalogue — tedlasso-strava</title>
+<title>Catalogue — il-principe-strava</title>
 <meta name="robots" content="noindex">
 <style>${STYLES}</style>
 </head>
@@ -78,10 +78,10 @@ export function renderCatalogue(nowMs: number): string {
   </header>
 
   <p class="cat-intro">
-    Every quote, GIF, still and clip the site can serve, read straight from the versioned
-    catalogue in <code>src/data/moods.ts</code>. A mood is chosen from your Strava
-    activity; the quote and GIF within it are seeded from the snapshot's refresh
-    time, so the same refresh always yields the same pairing.
+    Every quote the site can serve, read straight from the versioned catalogue in
+    <code>src/data/moods.ts</code>, with the chapter each mood draws on. A mood is chosen
+    from your Strava activity; the quote within it is seeded from the snapshot's refresh
+    time, so the same refresh always yields the same line.
   </p>
 
   ${sections}

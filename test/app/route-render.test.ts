@@ -10,8 +10,8 @@ const NOW = Date.parse("2026-08-14T19:00:00Z");
 function snapshot(route: Snapshot["route"]): Snapshot {
   return {
     version: 1, refreshedAt: NOW,
-    mood: { id: "believe", name: "Believe", accent: "#F2C14E" },
-    quote: { text: "Believe.", character: "AFC Richmond locker room" },
+    mood: { id: "virtu", name: "Virtù", accent: "#9A700B" },
+    quote: { text: "Fortune is the arbiter of one half of our actions.", character: "Machiavelli, The Prince" },
     gif: null, scores: { consistency: 70, charge: 60 }, reasons: [],
     facts: {
       last: {
@@ -100,10 +100,10 @@ describe("preview route", () => {
   const ctx = () => ({ waitUntil: () => {}, passThroughOnException: () => {} }) as unknown as ExecutionContext;
 
   it("renders the requested mood with a visible notice", async () => {
-    const res = await worker.fetch(new Request("https://x/?preview=roy-kent"), testEnv(), ctx());
+    const res = await worker.fetch(new Request("https://x/?preview=the-lion"), testEnv(), ctx());
     const html = await res.text();
     expect(res.status).toBe(200);
-    expect(html).toContain("Roy Kent");
+    expect(html).toContain("The Lion");
     expect(html.toLowerCase()).toContain("preview");
   });
 

@@ -10,6 +10,12 @@ export type MediaKind = "gif" | "image" | "video";
  * or image goes inline in the hero, a video is offered as a link rather than an
  * embedded player — an iframe would put a third party in the read path and
  * out-shout the quote, which is meant to be the largest thing on the page.
+ *
+ * The catalogue currently ships no media at all: the quotes are Machiavelli,
+ * and there is no honest stock of verified imagery to pair with them. Every
+ * mood therefore renders the designed single-column hero. The type and the
+ * rendering paths stay because a mood MAY carry media again — nothing here
+ * needs re-deriving the day one does.
  */
 export interface Media {
   kind: MediaKind;
@@ -28,317 +34,246 @@ export interface Mood {
   verifiedOn: string;
 }
 
+/** Il Principe, 1532. */
+const PRINCE = "Machiavelli, The Prince";
+/** Discorsi sopra la prima deca di Tito Livio, 1531. */
+const DISCOURSES = "Machiavelli, Discourses on Livy";
+
+/**
+ * The ten moods, one per branch of `selectMood`. The ids are load-bearing:
+ * the engine returns them and the snapshot stores them, so they are renamed
+ * only alongside src/domain/mood.ts.
+ *
+ * Accents carry over unchanged from the previous catalogue — each one is
+ * already checked against both newsprint stocks by test/data/moods.test.ts,
+ * and the mood a colour belongs to changed its name here, not its temperature.
+ */
 export const MOODS: Mood[] = [
   {
-    id: "preseason",
-    name: "Preseason",
+    // Nothing in 90 days: no campaign has been fought yet, so the reading is
+    // peacetime — which Machiavelli treats as training time, not rest.
+    id: "peacetime",
+    name: "Peacetime",
     accent: "#6B7A8F",
-    verifiedOn: "2026-08-14",
+    verifiedOn: "2026-08-25",
     quotes: [
-      { text: "I believe in hope. I believe in believe.", character: "Ted Lasso" },
       {
-        text: "Taking on a challenge is a lot like riding a horse. If you're comfortable while you're doing it, you're probably doing it wrong.",
-        character: "Ted Lasso",
+        text: "A prince must have no other object, nor any other thought, nor take anything else as his art, but the art of war.",
+        character: PRINCE,
       },
-      { text: "There's two buttons I never like to hit: panic and snooze.", character: "Ted Lasso" },
-    ],
-    media: [
       {
-        kind: "gif",
-        url: "https://media.giphy.com/media/RzE8jPRlLeEyEB6Dmf/giphy.gif",
-        alt: "Ted Lasso looks nervous and anxious.",
-        source: "Giphy",
-        verifiedOn: "2026-08-16",
+        text: "He ought never to let his thoughts stray from the exercise of war, and in peace he should train for it more diligently than in war itself.",
+        character: PRINCE,
       },
+      {
+        text: "A prudent man should always follow the paths beaten by great men, and imitate those who have been supreme.",
+        character: PRINCE,
+      },
+      { text: "All the armed prophets conquered, and the unarmed ones were destroyed.", character: PRINCE },
     ],
+    media: [],
   },
   {
-    id: "whered-you-go",
-    name: "Where'd You Go",
+    // Ten days dormant. Machiavelli's word for it is ozio — the idleness that
+    // loses princes their states while the weather is still fair.
+    id: "idleness",
+    name: "Idleness",
     accent: "#8C6239",
-    verifiedOn: "2026-08-14",
+    verifiedOn: "2026-08-25",
     quotes: [
       {
-        text: "I feel like we fell out of the lucky tree and hit every branch on the way down.",
-        character: "Ted Lasso",
+        text: "It is a common failing of mankind never to anticipate a storm while the sea is calm.",
+        character: PRINCE,
       },
       {
-        text: "You know what the happiest animal in the world is? It's a goldfish. It's got a ten-second memory. Be a goldfish.",
-        character: "Ted Lasso",
+        text: "Our princes, having held their positions for many years, may not blame fortune for having lost them, but rather their own indolence.",
+        character: PRINCE,
       },
       {
-        text: "I promise you there is something worse out there than being sad, and that's being alone and being sad.",
-        character: "Ted Lasso",
+        text: "The Romans never allowed a trouble spot to remain simply to avoid going to war over it, because they knew that war is not avoided, only postponed to the advantage of others.",
+        character: PRINCE,
       },
     ],
-    media: [
-      {
-        kind: "gif",
-        url: "https://media.giphy.com/media/l1uHfSdEdgHGKxOvcq/giphy.gif",
-        alt: "Ted Lasso looking sad and deflated.",
-        source: "Giphy",
-        verifiedOn: "2026-08-17",
-      },
-      {
-        kind: "gif",
-        url: "https://media.giphy.com/media/FJ9Fdud5b26E8OhgdW/giphy.gif",
-        alt: "Ted Lasso looking lost and unsure.",
-        source: "Giphy",
-        verifiedOn: "2026-08-17",
-      },
-      {
-        kind: "gif",
-        url: "https://media.giphy.com/media/XEVEIm85fGGAQMQpq4/giphy.gif",
-        alt: "A downcast Ted, quiet and sad.",
-        source: "Giphy",
-        verifiedOn: "2026-08-17",
-      },
-      {
-        kind: "gif",
-        url: "https://media.giphy.com/media/W6i8VJICgSn9A5qBqK/giphy.gif",
-        alt: "Ted Lasso waving goodbye to someone.",
-        source: "Giphy",
-        verifiedOn: "2026-08-17",
-      },
-    ],
+    media: [],
   },
   {
-    id: "believe",
-    name: "Believe",
-    // Darkened from the original #F2C14E: that pale gold cleared 11:1 against
-    // the dark stock but only 1.49:1 against the light one -- unreadable as
-    // this mood's headline and route-map color. This deeper amber keeps the
-    // same hue/saturation and clears 3:1 (WCAG large-text) against both.
+    // A fresh 90-day best: virtù, the prowess that is yours rather than
+    // fortune's. The one mood the engine will only give you for evidence.
+    id: "virtu",
+    name: "Virtù",
     accent: "#9A700B",
-    verifiedOn: "2026-08-14",
+    verifiedOn: "2026-08-25",
     quotes: [
-      { text: "Believe.", character: "AFC Richmond locker room" },
       {
-        text: "It's the lack of hope that comes and gets you. I believe in hope.",
-        character: "Ted Lasso",
+        text: "Those who become princes by their own prowess acquire their principality with difficulty, but they hold it with ease.",
+        character: PRINCE,
       },
-      { text: "Doing the right thing is never the wrong thing.", character: "Ted Lasso" },
+      {
+        text: "The only sound, sure and enduring methods of defence are those based on your own actions and your own prowess.",
+        character: PRINCE,
+      },
+      { text: "Truly great men are always the same in every fortune.", character: DISCOURSES },
+      { text: "It is not titles that honour men, but men that honour titles.", character: DISCOURSES },
     ],
-    media: [
-      {
-        kind: "gif",
-        url: "https://media.giphy.com/media/KG9iDKqmrUVXaHrR9q/giphy.gif",
-        alt: "A Ted Lasso Believe sticker.",
-        source: "Giphy",
-        verifiedOn: "2026-08-18",
-      },
-      {
-        kind: "gif",
-        url: "https://media.giphy.com/media/inzHjDkrSktCdw2EGn/giphy.gif",
-        alt: "Ted Lasso saying trust me.",
-        source: "Giphy",
-        verifiedOn: "2026-08-17",
-      },
-    ],
+    media: [],
   },
   {
-    id: "roy-kent",
-    name: "Roy Kent",
+    // Five days in a row and still going: the beast half of chapter 18, the
+    // half that frightens wolves.
+    id: "the-lion",
+    name: "The Lion",
     accent: "#B03A2E",
-    verifiedOn: "2026-08-14",
+    verifiedOn: "2026-08-25",
     quotes: [
       {
-        text: "He's here, he's there, he's every-bleeping-where.",
-        character: "Richmond supporters",
+        text: "One must be a fox in order to recognise traps, and a lion to frighten wolves.",
+        character: PRINCE,
       },
-      { text: "I don't want to be lucky. I want to be good.", character: "Roy Kent" },
-      { text: "Be curious, not judgmental.", character: "Ted Lasso" },
-    ],
-    media: [
+      { text: "It is far better to be feared than loved, if you cannot be both.", character: PRINCE },
       {
-        kind: "gif",
-        url: "https://media.giphy.com/media/5erpxvvqEBWBeFhrHa/giphy.gif",
-        alt: "Roy Kent's face flashes with sudden, exasperated frustration.",
-        source: "Giphy",
-        verifiedOn: "2026-08-16",
-      },
-      {
-        kind: "gif",
-        url: "https://media.giphy.com/media/Zod24bq6PTegwxMAcK/giphy.gif",
-        alt: "Roy Kent's scowl conveys blunt irritation.",
-        source: "Giphy",
-        verifiedOn: "2026-08-16",
+        text: "Men rise from one ambition to another: first they seek to secure themselves against attack, and then they attack others.",
+        character: DISCOURSES,
       },
     ],
+    media: [],
   },
   {
-    id: "comeback-szn",
-    name: "Comeback Szn",
+    // Back within two days of a week or more off. Fortune's wheel has come
+    // round; chapter 25 is about what you do with the half she leaves you.
+    id: "fortuna",
+    name: "Fortuna",
     accent: "#2E7D6B",
-    verifiedOn: "2026-08-14",
+    verifiedOn: "2026-08-25",
     quotes: [
-      { text: "Be a goldfish.", character: "Ted Lasso" },
-      // Corrected from the brief: this is Rebecca Welton quoting a Johan
-      // Cruyff line to Ted before the Man City match (S1E10, "The Hope
-      // That Kills You"); Ted's reply is "Ooh, I like that," not the line
-      // itself.
-      { text: "Every disadvantage has its advantage.", character: "Rebecca Welton" },
       {
-        text: "A good mentor hopes you will move on. A great mentor knows you will.",
-        character: "Leslie Higgins",
+        text: "Fortune is the arbiter of one half of our actions, but she still leaves the direction of the other half to us.",
+        character: PRINCE,
+      },
+      {
+        text: "Fortune is like one of those raging rivers; yet when it is quiet, men may make provision against her with dykes and banks.",
+        character: PRINCE,
+      },
+      {
+        text: "There is nothing more difficult to take in hand, more perilous to conduct, or more uncertain in its success, than to take the lead in the introduction of a new order of things.",
+        character: PRINCE,
+      },
+      {
+        text: "To ensure a long existence to states, it is necessary to bring them frequently back to their first principles.",
+        character: DISCOURSES,
       },
     ],
-    media: [
-      {
-        kind: "gif",
-        url: "https://media.giphy.com/media/oxQDaZaJUMNwxbPUx5/giphy.gif",
-        alt: "An animated goldfish illustrates forgetting and moving on quickly.",
-        source: "Giphy",
-        verifiedOn: "2026-08-16",
-      },
-    ],
+    media: [],
   },
   {
-    id: "diamond-dogs",
-    name: "Diamond Dogs",
+    // The middle band on both axes: nothing to crow about, nothing to fix.
+    // Chapter 23 is the one about listening to people who will tell you so.
+    id: "good-counsel",
+    name: "Good Counsel",
     accent: "#8A7B4F",
-    verifiedOn: "2026-08-14",
+    verifiedOn: "2026-08-25",
     quotes: [
-      { text: "Barbecue sauce.", character: "Ted Lasso" },
-      { text: "Diamond Dogs, assemble!", character: "Ted Lasso" },
       {
-        text: "If you care about someone, and you got a little love in your heart, there ain't nothing you can't get through together.",
-        character: "Ted Lasso",
+        text: "Good counsel, from whomever it comes, depends on the prudence of the prince, and not the prudence of the prince on good counsel.",
+        character: PRINCE,
+      },
+      {
+        text: "There is no other way of guarding oneself against flattery than by letting men understand that to tell you the truth will not offend you.",
+        character: PRINCE,
+      },
+      {
+        text: "A prince ought to ask about everything, listen to their opinions, and afterwards form his own conclusions.",
+        character: PRINCE,
       },
     ],
-    media: [
-      {
-        kind: "gif",
-        url: "https://media.giphy.com/media/yPK2Mo5zXUF8NsE8gE/giphy.gif",
-        alt: "The Diamond Dogs gather together in a moment of camaraderie.",
-        source: "Giphy",
-        verifiedOn: "2026-08-16",
-      },
-    ],
+    media: [],
   },
   {
-    id: "football-is-life",
-    name: "Football Is Life",
+    // High on both axes. Chapters 12 and 13: the state that rests on borrowed
+    // arms rests on nothing, and yours are showing.
+    id: "arms-of-your-own",
+    name: "Arms of Your Own",
     accent: "#1F7A3D",
-    verifiedOn: "2026-08-14",
+    verifiedOn: "2026-08-25",
     quotes: [
-      { text: "Football is life!", character: "Dani Rojas" },
+      { text: "There cannot be good laws where there are not good arms.", character: PRINCE },
+      { text: "Mercenaries and auxiliaries are useless and dangerous.", character: PRINCE },
       {
-        text: "I think that you might be so sure that you're one in a million that sometimes you forget that out there you're just one of eleven.",
-        character: "Ted Lasso",
-      },
-      // Corrected from the brief: this line is written by journalist Trent
-      // Crimm in his newspaper column (S1E3, "Trent Crimm: The
-      // Independent"), not spoken by Ted.
-      {
-        text: "If the Lasso way is wrong, it's hard to imagine being right.",
-        character: "Trent Crimm",
+        text: "Without arms of its own no principality is secure; rather it is wholly dependent on fortune.",
+        character: PRINCE,
       },
     ],
-    media: [
-      {
-        kind: "gif",
-        url: "https://media.giphy.com/media/UL3kNMFvmKGXlOD8Qu/giphy.gif",
-        alt: "Dani Rojas cheerfully declares that football is life.",
-        source: "Giphy",
-        verifiedOn: "2026-08-16",
-      },
-    ],
+    media: [],
   },
   {
-    id: "gaffer-mode",
-    name: "Gaffer Mode",
-    // Lightened from the original #34495E: that navy cleared 8.23:1 against
-    // the light stock but only 1.99:1 against the dark one. This keeps the
-    // same navy-slate hue and saturation, lifted to clear 3:1 against both.
+    // Consistent but unhurried: chapter 10's prince, provisioned and walled,
+    // who is not attacked because attacking him would plainly be work.
+    id: "fortified-city",
+    name: "The Fortified City",
     accent: "#56799C",
-    verifiedOn: "2026-08-14",
+    verifiedOn: "2026-08-25",
     quotes: [
       {
-        text: "Success is not about the wins and losses. It's about helping these young fellas be the best versions of themselves.",
-        character: "Ted Lasso",
+        text: "A prince who has a strong city, and has not made himself hated, cannot be attacked.",
+        character: PRINCE,
       },
       {
-        text: "I think things come into our lives to help us get from one place to a better one.",
-        character: "Ted Lasso",
+        text: "Cities that are well fortified and well provisioned are never attacked without great difficulty.",
+        character: PRINCE,
       },
-      { text: "The harder you work, the luckier you get.", character: "Ted Lasso" },
+      { text: "Men are always adverse to enterprises where difficulties can be seen.", character: PRINCE },
     ],
-    media: [
-      {
-        kind: "gif",
-        url: "https://media.giphy.com/media/aCguaqXP2s1qRwvZCn/giphy.gif",
-        alt: "Ted Lasso urging a player on.",
-        source: "Giphy",
-        verifiedOn: "2026-08-17",
-      },
-      {
-        kind: "gif",
-        url: "https://media.giphy.com/media/ui0InHDmrAPg0zbmTJ/giphy.gif",
-        alt: "Ted Lasso asking what are you doing.",
-        source: "Giphy",
-        verifiedOn: "2026-08-17",
-      },
-    ],
+    media: [],
   },
   {
-    id: "hopeful",
-    name: "Hopeful",
-    // Darkened from the original #C77DBB: that orchid pink cleared 6.23:1
-    // against the dark stock but only 2.63:1 against the light one. Same hue
-    // and saturation, deepened to clear 3:1 against both.
+    // Charged but scattered: all the boldness of chapter 25 and none of the
+    // dykes and banks. Machiavelli is, on balance, in favour.
+    id: "the-impetuous",
+    name: "The Impetuous",
     accent: "#B24DA2",
-    verifiedOn: "2026-08-14",
+    verifiedOn: "2026-08-25",
     quotes: [
-      { text: "I believe in hope. I believe in believe.", character: "Ted Lasso" },
       {
-        text: "You beating yourself up is like Woody Allen playing the clarinet. I don't wanna hear it.",
-        character: "Ted Lasso",
+        text: "It is better to be impetuous than cautious, for fortune is more often subdued by those who act boldly than by those who proceed coldly.",
+        character: PRINCE,
       },
-      // Unverified: could not confirm this exact phrasing via search within
-      // the time-box (a related but distinct line, "small acts of kindness
-      // make a championship team," turned up instead). Kept as the brief
-      // specifies pending a fan/transcript check.
-      { text: "Small acts of kindness never go unnoticed.", character: "Ted Lasso" },
-    ],
-    media: [
       {
-        kind: "gif",
-        url: "https://media.giphy.com/media/2bbDxqLAyYzd7Z4Pb8/giphy.gif",
-        alt: "The Richmond squad showing solidarity together.",
-        source: "Giphy",
-        verifiedOn: "2026-08-17",
+        text: "She is a friend to the young, because they are less cautious, more fierce, and command her with more audacity.",
+        character: PRINCE,
       },
+      {
+        text: "The man who adapts his course of action to the nature of the times will succeed.",
+        character: PRINCE,
+      },
+      { text: "Whoever desires constant success must change his conduct with the times.", character: DISCOURSES },
     ],
+    media: [],
   },
   {
-    id: "biscuits",
-    name: "Biscuits",
-    // Darkened from the original #D98B5F: that terracotta cleared 6.87:1
-    // against the dark stock but only 2.38:1 against the light one. Same hue
-    // and saturation, deepened to clear 3:1 against both.
+    // The fallback: quiet on both axes, no rule fired. Chapters 3 and 21 —
+    // time is the one thing still moving, and it moves either way.
+    id: "benefit-of-time",
+    name: "The Benefit of Time",
     accent: "#B95F2C",
-    verifiedOn: "2026-08-14",
+    verifiedOn: "2026-08-25",
     quotes: [
-      { text: "Biscuits with the boss.", character: "Ted Lasso" },
       {
-        text: "I always figured that tea was gonna taste like hot brown water. And you know what? I was right.",
-        character: "Ted Lasso",
+        text: "Time drives everything before it, and is able to bring with it good as well as evil, and evil as well as good.",
+        character: PRINCE,
       },
-      // Unverified: could not confirm this exact phrasing via search within
-      // the time-box. Kept as the brief specifies pending a fan/transcript
-      // check.
-      { text: "Taking a break is not the same as giving up.", character: "Ted Lasso" },
-    ],
-    media: [
       {
-        kind: "gif",
-        url: "https://media.giphy.com/media/n424iLDqTlHRrWtkLl/giphy.gif",
-        alt: "Rebecca Welton reacting in her office.",
-        source: "Giphy",
-        verifiedOn: "2026-08-17",
+        text: "Let no state believe that it can always choose safe courses; rather let it think that all are doubtful.",
+        character: PRINCE,
+      },
+      {
+        text: "Prudence consists in knowing how to distinguish degrees of disadvantage, and in accepting the lesser as good.",
+        character: PRINCE,
+      },
+      {
+        text: "Whoever considers the past and the present will find that all cities and all peoples are animated by the same desires.",
+        character: DISCOURSES,
       },
     ],
+    media: [],
   },
 ];
 

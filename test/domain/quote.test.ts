@@ -5,15 +5,15 @@ import { fnv1a, pickQuote } from "../../src/domain/quote";
 
 describe("fnv1a", () => {
   it("is deterministic", () => {
-    expect(fnv1a("believe")).toBe(fnv1a("believe"));
+    expect(fnv1a("virtu")).toBe(fnv1a("virtu"));
   });
 
   it("differs for different inputs", () => {
-    expect(fnv1a("believe")).not.toBe(fnv1a("biscuits"));
+    expect(fnv1a("virtu")).not.toBe(fnv1a("fortuna"));
   });
 
   it("returns a non-negative 32-bit integer", () => {
-    for (const s of ["", "a", "1755200000000believe"]) {
+    for (const s of ["", "a", "1755200000000virtu"]) {
       const h = fnv1a(s);
       expect(Number.isInteger(h)).toBe(true);
       expect(h).toBeGreaterThanOrEqual(0);
@@ -23,7 +23,7 @@ describe("fnv1a", () => {
 });
 
 describe("pickQuote", () => {
-  const mood = getMood("believe")!;
+  const mood = getMood("virtu")!;
 
   it("returns the same quote for the same seed", () => {
     expect(pickQuote(mood, 1_755_200_000_000).quote).toEqual(
@@ -54,15 +54,11 @@ describe("pickQuote", () => {
   });
 });
 
-// Six of the ten moods in the real catalogue now ship one or more GIFs (see
-// src/data/moods.ts), so `pickQuote`'s gif-present branch is exercised by
-// catalogue data too — the "works for every mood in the catalogue" test
-// above already covers that. This synthetic fixture still earns its keep by
-// pinning the branch's behaviour independently of whatever the catalogue
-// happens to contain right now, so it does not silently stop testing
-// anything if a future edit removes every GIF from every mood. Nothing here
-// is invented into src/data/moods.ts — the fabricated URL lives only in this
-// test file.
+// The real catalogue ships no media at all since the Machiavelli rebrand (see
+// src/data/moods.ts), so this synthetic fixture is now the ONLY thing keeping
+// `pickQuote`'s media-present branch covered — exactly the case the comment
+// that used to sit here anticipated. Nothing below is invented into
+// src/data/moods.ts; the fabricated URLs live only in this test file.
 describe("pickQuote gif selection", () => {
   const syntheticGifs = [
     {

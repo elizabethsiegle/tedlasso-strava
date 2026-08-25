@@ -1,7 +1,9 @@
 # tedlasso-strava
 
 A single-athlete Cloudflare Worker that reads my Strava activity every 4 hours, derives a
-"mood" from it, and serves one Ted Lasso quote + GIF that matches.
+"mood" from it, and serves one Machiavelli quote that matches. (The repo, Worker and OAuth
+callback keep the `tedlasso-strava` name from the first draft — the pages were rebranded,
+the deployed identifiers were not.)
 
 ## UI must not look AI-generated
 
@@ -50,9 +52,13 @@ Concretely, on this project:
   access token it came with. A failed refresh must never clear the last good snapshot.
 - The read path (page views) never calls Strava. It reads the KV snapshot only. Only the
   cron and the guarded manual-refresh endpoint may call Strava.
-- Every mood, quote, and GIF lives in the versioned catalogue in `src/data/moods.ts` with a
-  `verifiedOn` date — never hardcoded in rendering or engine logic. Flag GIF links whose
-  `verifiedOn` is older than 180 days as stale.
+- Every mood, quote, and piece of media lives in the versioned catalogue in
+  `src/data/moods.ts` with a `verifiedOn` date — never hardcoded in rendering or engine
+  logic. Flag media links whose `verifiedOn` is older than 180 days as stale. The catalogue
+  is all text today; the media plumbing stays, and stays tested, for the day it isn't.
+- Quotes are Machiavelli, attributed to *The Prince* or the *Discourses on Livy*. Attribute
+  to the work, never invent a line, and don't let a paraphrase drift into the catalogue as
+  a quotation.
 - Never claim a "personal record." We only have 90 days of activity list data, so the honest
   claim is "longest ride in 90 days." Say what we can actually back.
 - Route polylines are privacy-trimmed at both ends in the *write* path, before anything is
