@@ -1,0 +1,41 @@
+{
+  "cli_version": "0.10.2",
+  "checkpoint_id": "01M0XDZGZS79HYYQNSGMAT44WJ",
+  "strategy": "manual-commit",
+  "branch": "change-front-page-ted-lasso-quotes-to-be-machiav",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "CLAUDE.md",
+    "README.md",
+    "src/app/catalogue.ts",
+    "src/app/render.ts",
+    "src/data/moods.ts",
+    "src/domain/mood.ts",
+    "src/worker.ts",
+    "test/app/catalogue.test.ts",
+    "test/app/refresh-ui.test.ts",
+    "test/app/refresh.test.ts",
+    "test/app/render.test.ts",
+    "test/app/route-render.test.ts",
+    "test/data/moods.test.ts",
+    "test/domain/mood.test.ts",
+    "test/domain/quote.test.ts",
+    "test/infrastructure/kv.test.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 82,
+    "cache_creation_tokens": 124601,
+    "cache_read_tokens": 3898845,
+    "output_tokens": 39873,
+    "api_call_count": 41
+  }
+}
