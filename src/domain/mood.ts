@@ -45,7 +45,7 @@ export function selectMood(f: Facts, scores: Scores): Selection {
   // 1. Nothing to go on.
   if (f.totalActivities === 0) {
     return {
-      moodId: "preseason",
+      moodId: "peacetime",
       reasons: ["No activities in the last 90 days — the season hasn't kicked off yet"],
     };
   }
@@ -58,7 +58,7 @@ export function selectMood(f: Facts, scores: Scores): Selection {
   // 2. Dormant.
   if (days >= TUNING.DORMANT_DAYS) {
     return {
-      moodId: "whered-you-go",
+      moodId: "idleness",
       reasons: [`${Math.floor(days)} days since your last activity`, ...commonReasons(f)],
     };
   }
@@ -69,7 +69,7 @@ export function selectMood(f: Facts, scores: Scores): Selection {
     const sport = f.last?.sportType.toLowerCase() ?? "session";
     const when = days < 1 ? "today" : days < 2 ? "yesterday" : "two days ago";
     return {
-      moodId: "believe",
+      moodId: "virtu",
       reasons: [`Your ${what} ${sport} in 90 days, and it was ${when}`, ...commonReasons(f)],
     };
   }
@@ -77,7 +77,7 @@ export function selectMood(f: Facts, scores: Scores): Selection {
   // 4. On a run of days.
   if (f.streakDays >= TUNING.STREAK_MOOD_DAYS) {
     return {
-      moodId: "roy-kent",
+      moodId: "the-lion",
       reasons: [`${f.streakDays} days in a row and still going`, ...commonReasons(f).slice(0, 1)],
     };
   }
@@ -85,7 +85,7 @@ export function selectMood(f: Facts, scores: Scores): Selection {
   // 5. Back after a layoff.
   if (days <= TUNING.RECENT_DAYS && f.previousGapDays !== null && f.previousGapDays >= TUNING.COMEBACK_GAP_DAYS) {
     return {
-      moodId: "comeback-szn",
+      moodId: "fortuna",
       reasons: [
         `Back at it after ${Math.floor(f.previousGapDays)} days off`,
         ...commonReasons(f),
@@ -101,11 +101,11 @@ export function selectMood(f: Facts, scores: Scores): Selection {
   const reasons = commonReasons(f);
   if (reasons.length === 0) reasons.push(`${Math.floor(days)} days since your last activity`);
 
-  if (inBand(consistency) && inBand(charge)) return { moodId: "diamond-dogs", reasons };
+  if (inBand(consistency) && inBand(charge)) return { moodId: "good-counsel", reasons };
   if (consistency >= TUNING.GRID_HIGH && charge >= TUNING.GRID_HIGH) {
-    return { moodId: "football-is-life", reasons };
+    return { moodId: "arms-of-your-own", reasons };
   }
-  if (consistency >= TUNING.GRID_HIGH) return { moodId: "gaffer-mode", reasons };
-  if (charge >= TUNING.GRID_HIGH) return { moodId: "hopeful", reasons };
-  return { moodId: "biscuits", reasons };
+  if (consistency >= TUNING.GRID_HIGH) return { moodId: "fortified-city", reasons };
+  if (charge >= TUNING.GRID_HIGH) return { moodId: "the-impetuous", reasons };
+  return { moodId: "benefit-of-time", reasons };
 }

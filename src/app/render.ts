@@ -175,20 +175,20 @@ function requireMood(id: string): Mood {
 }
 
 // The catalogue is the single source for every mood's id/name/accent and
-// quotes — never hardcoded again here. (This used to duplicate "preseason"
+// quotes — never hardcoded again here. (This used to duplicate "peacetime"
 // and its accent verbatim; see also worker.ts's EMPTY_PREVIEW_SNAPSHOT,
 // which now reads from the same catalogue entry.)
-const PRESEASON_MOOD = requireMood("preseason");
+const PEACETIME_MOOD = requireMood("peacetime");
 
 export function renderPage(view: PageView): string {
   const { snapshot, health, nowMs, showRefreshButton, previewNotice, setupKey } = view;
 
   const mood = snapshot?.mood ?? {
-    id: PRESEASON_MOOD.id,
-    name: PRESEASON_MOOD.name,
-    accent: PRESEASON_MOOD.accent,
+    id: PEACETIME_MOOD.id,
+    name: PEACETIME_MOOD.name,
+    accent: PEACETIME_MOOD.accent,
   };
-  const quote = snapshot?.quote ?? PRESEASON_MOOD.quotes[0]!;
+  const quote = snapshot?.quote ?? PEACETIME_MOOD.quotes[0]!;
 
   const ageHours = snapshot ? (nowMs - snapshot.refreshedAt) / 3_600_000 : 0;
   const stale = snapshot !== null && ageHours > TUNING.STALE_SNAPSHOT_HOURS;
@@ -230,8 +230,8 @@ export function renderPage(view: PageView): string {
       `<p class="notice">The first fetch hasn't run yet. Once it does, this page fills in on its own.</p>`,
     );
   } else if (snapshot && snapshot.facts.totalActivities === 0) {
-    // Kind copy, not scolding: 90 quiet days is a fact, not a failing, and this
-    // is a Ted Lasso site.
+    // Kind copy, not scolding: 90 quiet days is a fact, not a failing. The
+    // quotes are Machiavelli; the notices are not.
     notices.push(
       `<p class="notice">Quiet on the pitch these last 90 days — no activities to report. ` +
         `That's alright. The door's open whenever you're ready to lace back up.</p>`,
@@ -283,7 +283,7 @@ export function renderPage(view: PageView): string {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${escapeHtml(mood.name)} — tedlasso-strava</title>
+<title>${escapeHtml(mood.name)} — il-principe-strava</title>
 <meta name="robots" content="noindex">
 <style>${STYLES}</style>
 </head>
@@ -311,7 +311,7 @@ export function renderPage(view: PageView): string {
   ${snapshot ? results(snapshot) : ""}
 
   <footer class="footer">
-    <span><a href="https://www.strava.com" rel="noopener">Powered by Strava</a> · <a href="/catalogue">Quote &amp; GIF catalogue</a></span>
+    <span><a href="https://www.strava.com" rel="noopener">Powered by Strava</a> · <a href="/catalogue">Quote catalogue</a></span>
     <span class="footer-meta">${footerMeta}</span>
     <span>${refreshButton}</span>
   </footer>

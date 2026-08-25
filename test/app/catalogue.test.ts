@@ -43,18 +43,17 @@ describe("renderCatalogue", () => {
     }
   });
 
-  it("flags a gif whose verifiedOn has aged past the threshold", () => {
-    // Every catalogue entry is fresh, so age the clock rather than fake the
-    // data — this asserts the real catalogue against the real rule. Anchor on
-    // the newest verifiedOn, not on NOW: entries verified after NOW would still
-    // be inside the window if the offset were measured from the fixture clock.
-    const newest = Math.max(
-      ...MOODS.flatMap((m) => m.media).map((g) => Date.parse(g.verifiedOn)),
-    );
-    const later = newest + (TUNING.STALE_VERIFIED_DAYS + 1) * DAY_MS;
-    const html = renderCatalogue(later);
-    expect(html).toContain("stale-marker");
-    expect(html).toContain(`${TUNING.STALE_VERIFIED_DAYS}+ days`);
+  // This used to age the clock past the newest catalogue entry and assert the
+  // marker appeared. The catalogue has carried no media since the Machiavelli
+  // rebrand, so there is no entry left to age and no marker to raise at any
+  // clock — asserting one would only be asserting fabricated data. The rule
+  // itself (isGifStale) and the marker markup are pinned against synthetic
+  // snapshots in test/app/render.test.ts; what is worth pinning HERE is that
+  // an all-text catalogue never cries stale, however far the clock runs.
+  it("raises no staleness marker for a catalogue that carries no media, at any clock", () => {
+    expect(MOODS.flatMap((m) => m.media)).toEqual([]);
+    const farFuture = NOW + (TUNING.STALE_VERIFIED_DAYS + 1) * DAY_MS * 10;
+    expect(renderCatalogue(farFuture)).not.toContain("stale-marker");
   });
 
   it("shows no staleness markers while every entry is freshly verified", () => {

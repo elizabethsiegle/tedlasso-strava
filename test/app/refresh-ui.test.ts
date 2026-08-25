@@ -6,8 +6,8 @@ const NOW = Date.parse("2026-08-14T19:00:00Z");
 
 const SNAPSHOT: Snapshot = {
   version: 1, refreshedAt: NOW,
-  mood: { id: "believe", name: "Believe", accent: "#F2C14E" },
-  quote: { text: "Believe.", character: "AFC Richmond locker room" },
+  mood: { id: "virtu", name: "Virtù", accent: "#9A700B" },
+  quote: { text: "Fortune is the arbiter of one half of our actions.", character: "Machiavelli, The Prince" },
   gif: null, scores: { consistency: 70, charge: 60 }, reasons: [],
   facts: {
     last: null, daysSinceLast: null, countLast7: 0,

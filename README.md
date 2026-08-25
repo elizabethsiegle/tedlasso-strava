@@ -1,8 +1,14 @@
 # tedlasso-strava
 
 A single-athlete Cloudflare Worker that reads your Strava activity every 4 hours, derives a
-"mood" from it, and serves a matching Ted Lasso quote and GIF on a public page. It is built
-for one Strava account at a time — there is no multi-user login or account switching.
+"mood" from it, and serves a matching Machiavelli quote on a public page. It is built for
+one Strava account at a time — there is no multi-user login or account switching.
+
+The ten moods map the engine's ten branches onto *The Prince* and the *Discourses*: nine
+quiet days reads as `idleness`, a fresh 90-day best as `virtu`, a five-day streak as
+`the-lion`, and so on. The repo, the Worker and the callback URL still carry the
+`tedlasso-strava` name from the project's first draft — renaming those would break the
+deployed URL and the Strava OAuth callback, so only the pages were rebranded.
 
 ## One-time setup
 
@@ -94,17 +100,18 @@ coordinates. Do this only if you understand and accept that trade-off.
 
 Powered by [Strava](https://www.strava.com).
 
-GIFs are hotlinked from [Giphy](https://giphy.com) (`media.giphy.com`); credit to Giphy and
-the original clip creators.
+Quotes are from Niccolò Machiavelli's *The Prince* (1532) and *Discourses on Livy* (1531),
+both long in the public domain, and are attributed to the work they come from on the page
+and in the catalogue.
 
-This project is not affiliated with, endorsed by, or sponsored by Strava, Giphy, or the
-makers of Ted Lasso.
+This project is not affiliated with, endorsed by, or sponsored by Strava.
 
 ## Known limitations
 
-- 4 of the 10 moods (`whered-you-go`, `gaffer-mode`, `hopeful`, `biscuits`) currently ship
-  without a GIF and render a single-column layout instead of the two-column quote+GIF
-  layout.
-- GIF alt text was written from search-result metadata rather than by viewing each GIF
-  directly, so descriptions are approximate — they describe the character and emotional beat
-  the mood mapping supports, not verified frame-by-frame content.
+- The catalogue ships no media at all, so every mood renders the single-column quote
+  layout. The two-column quote+media hero, the still and video kinds, and the staleness
+  marker all still work — they are exercised by tests against synthetic snapshots — but
+  nothing in `src/data/moods.ts` currently reaches them.
+- Quote wording follows the common English translations (Marriott, Detmold) rather than any
+  single edition, and the chapter each line comes from is recorded in a comment on its mood
+  rather than shown on the page.

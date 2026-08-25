@@ -9,11 +9,11 @@ function snapshot(overrides: Partial<Snapshot> = {}): Snapshot {
   return {
     version: 1,
     refreshedAt: NOW - 3_600_000,
-    mood: { id: "believe", name: "Believe", accent: "#F2C14E" },
-    quote: { text: "Believe.", character: "AFC Richmond locker room" },
+    mood: { id: "virtu", name: "Virtù", accent: "#9A700B" },
+    quote: { text: "Fortune is the arbiter of one half of our actions.", character: "Machiavelli, The Prince" },
     gif: {
-      url: "https://example.test/believe.gif",
-      alt: "The Believe sign above the office door.",
+      url: "https://example.test/virtu.gif",
+      alt: "A woodcut of Fortune at her wheel.",
       verifiedOn: "2026-08-14",
     },
     scores: { consistency: 72, charge: 64 },
@@ -63,18 +63,18 @@ describe("renderPage", () => {
 
   it("shows the mood, quote, and character", () => {
     const html = renderPage(view());
-    expect(html).toContain("Believe");
-    expect(html).toContain("AFC Richmond locker room");
+    expect(html).toContain("Virtù");
+    expect(html).toContain("Machiavelli, The Prince");
   });
 
   it("uses the mood accent as a css custom property", () => {
-    expect(renderPage(view())).toContain("--ink-accent: #F2C14E");
+    expect(renderPage(view())).toContain("--ink-accent: #9A700B");
   });
 
   it("shows the gif with its alt text", () => {
     const html = renderPage(view());
-    expect(html).toContain("https://example.test/believe.gif");
-    expect(html).toContain("The Believe sign above the office door.");
+    expect(html).toContain("https://example.test/virtu.gif");
+    expect(html).toContain("A woodcut of Fortune at her wheel.");
   });
 
   it("omits the image element entirely when there is no gif", () => {
@@ -129,9 +129,9 @@ describe("renderPage", () => {
     expect(renderPage(view()).toLowerCase()).not.toContain("personal record");
   });
 
-  it("renders the preseason state when there is no snapshot", () => {
+  it("renders the peacetime state when there is no snapshot", () => {
     const html = renderPage(view({ snapshot: null }));
-    expect(html).toContain("Preseason");
+    expect(html).toContain("Peacetime");
     expect(html).toContain("hasn't run yet");
     expect(html).not.toContain("Loading");
   });
@@ -349,7 +349,7 @@ describe("renderPage", () => {
   describe("media kinds", () => {
     it("renders a still image inline, exactly as it renders a gif", () => {
       const still = snapshot({
-        gif: { url: "https://example.test/meme.png", alt: "A Ted Lasso meme still.", verifiedOn: "2026-08-14", kind: "image" },
+        gif: { url: "https://example.test/meme.png", alt: "A still of the Palazzo Vecchio at dusk.", verifiedOn: "2026-08-14", kind: "image" },
       });
       const html = renderPage(view({ snapshot: still }));
       expect(html).toContain('<img class="gif" src="https://example.test/meme.png"');
@@ -360,12 +360,12 @@ describe("renderPage", () => {
 
     it("offers a video as a link and never as an embedded player", () => {
       const clip = snapshot({
-        gif: { url: "https://www.youtube.com/watch?v=abc123", alt: "Ted explains the offside rule.", verifiedOn: "2026-08-14", kind: "video" },
+        gif: { url: "https://www.youtube.com/watch?v=abc123", alt: "A lecture on the Discourses on Livy.", verifiedOn: "2026-08-14", kind: "video" },
       });
       const html = renderPage(view({ snapshot: clip }));
       expect(html).toContain('class="hero-video"');
       expect(html).toContain("https://www.youtube.com/watch?v=abc123");
-      expect(html).toContain("Ted explains the offside rule.");
+      expect(html).toContain("A lecture on the Discourses on Livy.");
       // The whole point of the link treatment: no third party in the read path.
       expect(html).not.toContain("<iframe");
       expect(html).not.toContain("<video");

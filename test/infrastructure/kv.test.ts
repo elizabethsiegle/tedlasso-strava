@@ -9,8 +9,8 @@ function snapshot(): Snapshot {
   return {
     version: 1,
     refreshedAt: 1_755_200_000_000,
-    mood: { id: "believe", name: "Believe", accent: "#F2C14E" },
-    quote: { text: "Believe.", character: "AFC Richmond locker room" },
+    mood: { id: "virtu", name: "Virtù", accent: "#9A700B" },
+    quote: { text: "Fortune is the arbiter of one half of our actions.", character: "Machiavelli, The Prince" },
     gif: null,
     scores: { consistency: 70, charge: 60 },
     reasons: ["3 workouts this week, against your usual 2"],

@@ -29,29 +29,29 @@ const MID = { consistency: 45, charge: 45 };
 describe("override rules, in order", () => {
   it("1. no activities wins over everything", () => {
     const f = facts({ totalActivities: 0, last: null, daysSinceLast: null, isLongest90: true, streakDays: 9 });
-    expect(selectMood(f, { consistency: 0, charge: 0 }).moodId).toBe("preseason");
+    expect(selectMood(f, { consistency: 0, charge: 0 }).moodId).toBe("peacetime");
   });
 
   it("2. ten or more days dormant", () => {
-    expect(selectMood(facts({ daysSinceLast: 10 }), MID).moodId).toBe("whered-you-go");
+    expect(selectMood(facts({ daysSinceLast: 10 }), MID).moodId).toBe("idleness");
   });
 
   it("2. exactly 10.0 days is dormant; 9.9 is not", () => {
-    expect(selectMood(facts({ daysSinceLast: 10.0 }), MID).moodId).toBe("whered-you-go");
-    expect(selectMood(facts({ daysSinceLast: 9.9 }), MID).moodId).not.toBe("whered-you-go");
+    expect(selectMood(facts({ daysSinceLast: 10.0 }), MID).moodId).toBe("idleness");
+    expect(selectMood(facts({ daysSinceLast: 9.9 }), MID).moodId).not.toBe("idleness");
   });
 
   it("3. a fresh 90-day best beats a streak", () => {
     const f = facts({ isLongest90: true, daysSinceLast: 1, streakDays: 9 });
-    expect(selectMood(f, MID).moodId).toBe("believe");
+    expect(selectMood(f, MID).moodId).toBe("virtu");
   });
 
   it("3. fastest also qualifies", () => {
-    expect(selectMood(facts({ isFastest90: true, daysSinceLast: 2 }), MID).moodId).toBe("believe");
+    expect(selectMood(facts({ isFastest90: true, daysSinceLast: 2 }), MID).moodId).toBe("virtu");
   });
 
   it("3. a stale best does not qualify", () => {
-    expect(selectMood(facts({ isLongest90: true, daysSinceLast: 5 }), MID).moodId).not.toBe("believe");
+    expect(selectMood(facts({ isLongest90: true, daysSinceLast: 5 }), MID).moodId).not.toBe("virtu");
   });
 
   it("3. says 'today' when the best happened at zero days out", () => {
@@ -60,22 +60,22 @@ describe("override rules, in order", () => {
   });
 
   it("4. a five-day streak", () => {
-    expect(selectMood(facts({ streakDays: 5, daysSinceLast: 0 }), MID).moodId).toBe("roy-kent");
+    expect(selectMood(facts({ streakDays: 5, daysSinceLast: 0 }), MID).moodId).toBe("the-lion");
   });
 
   it("5. back within two days after a week off", () => {
     const f = facts({ daysSinceLast: 1, previousGapDays: 8, streakDays: 1 });
-    expect(selectMood(f, MID).moodId).toBe("comeback-szn");
+    expect(selectMood(f, MID).moodId).toBe("fortuna");
   });
 
   it("5. does not fire when the gap was short", () => {
     const f = facts({ daysSinceLast: 1, previousGapDays: 2, streakDays: 1 });
-    expect(selectMood(f, MID).moodId).not.toBe("comeback-szn");
+    expect(selectMood(f, MID).moodId).not.toBe("fortuna");
   });
 
   it("5. does not fire with no previous activity to measure a gap against", () => {
     const f = facts({ daysSinceLast: 1, previousGapDays: null });
-    expect(selectMood(f, MID).moodId).not.toBe("comeback-szn");
+    expect(selectMood(f, MID).moodId).not.toBe("fortuna");
   });
 });
 
@@ -83,32 +83,32 @@ describe("the score grid", () => {
   const plain = facts({ daysSinceLast: 4, streakDays: 0, previousGapDays: 2 });
 
   it("middle band on both axes is checked first", () => {
-    expect(selectMood(plain, { consistency: 45, charge: 45 }).moodId).toBe("diamond-dogs");
-    expect(selectMood(plain, { consistency: 36, charge: 59 }).moodId).toBe("diamond-dogs");
+    expect(selectMood(plain, { consistency: 45, charge: 45 }).moodId).toBe("good-counsel");
+    expect(selectMood(plain, { consistency: 36, charge: 59 }).moodId).toBe("good-counsel");
   });
 
   it("high and high", () => {
-    expect(selectMood(plain, { consistency: 80, charge: 80 }).moodId).toBe("football-is-life");
+    expect(selectMood(plain, { consistency: 80, charge: 80 }).moodId).toBe("arms-of-your-own");
   });
 
   it("high consistency, low charge", () => {
-    expect(selectMood(plain, { consistency: 80, charge: 20 }).moodId).toBe("gaffer-mode");
+    expect(selectMood(plain, { consistency: 80, charge: 20 }).moodId).toBe("fortified-city");
   });
 
   it("low consistency, high charge", () => {
-    expect(selectMood(plain, { consistency: 20, charge: 80 }).moodId).toBe("hopeful");
+    expect(selectMood(plain, { consistency: 20, charge: 80 }).moodId).toBe("the-impetuous");
   });
 
   it("low and low", () => {
-    expect(selectMood(plain, { consistency: 20, charge: 20 }).moodId).toBe("biscuits");
+    expect(selectMood(plain, { consistency: 20, charge: 20 }).moodId).toBe("benefit-of-time");
   });
 
   it("treats 60 as high on both axes", () => {
-    expect(selectMood(plain, { consistency: 60, charge: 60 }).moodId).toBe("football-is-life");
+    expect(selectMood(plain, { consistency: 60, charge: 60 }).moodId).toBe("arms-of-your-own");
   });
 
-  it("a mid consistency with a low charge is not diamond-dogs", () => {
-    expect(selectMood(plain, { consistency: 45, charge: 10 }).moodId).toBe("biscuits");
+  it("a mid consistency with a low charge is not good-counsel", () => {
+    expect(selectMood(plain, { consistency: 45, charge: 10 }).moodId).toBe("benefit-of-time");
   });
 });
 
@@ -145,7 +145,7 @@ describe("reasons", () => {
     expect(joined).not.toContain("workouts");
   });
 
-  it("mentions an active streak below the roy-kent threshold", () => {
+  it("mentions an active streak below the the-lion threshold", () => {
     const f = facts({ streakDays: 3 });
     expect(selectMood(f, MID).reasons.join(" ")).toContain("3 days in a row");
   });

@@ -30,8 +30,8 @@ function contrastRatio(a: string, b: string): number {
 }
 
 const REQUIRED_IDS = [
-  "preseason", "whered-you-go", "believe", "roy-kent", "comeback-szn",
-  "diamond-dogs", "football-is-life", "gaffer-mode", "hopeful", "biscuits",
+  "peacetime", "idleness", "virtu", "the-lion", "fortuna",
+  "good-counsel", "arms-of-your-own", "fortified-city", "the-impetuous", "benefit-of-time",
 ];
 
 describe("mood catalogue", () => {
@@ -99,18 +99,17 @@ describe("mood catalogue", () => {
   });
 
   it("resolves a known id and rejects an unknown one", () => {
-    expect(getMood("believe")?.name).toBe("Believe");
+    expect(getMood("virtu")?.name).toBe("Virtù");
     expect(getMood("nope")).toBeUndefined();
   });
 
-  // A mood with an empty `gifs` array is a legitimate, honest state (the
-  // page's designed no-GIF hero layout) — not every mood is required to have
-  // one. This test only pins the shape of whatever GIFs a mood DOES carry; it
-  // must not also pin how many moods currently have none, or it becomes a
-  // regression the day someone sources the rest.
-  it("gives every populated mood well-formed GIF entries, and allows some moods to have none", () => {
-    const withGifs = MOODS.filter((m) => m.media.length > 0);
-    expect(withGifs.length).toBeGreaterThan(0);
+  // A mood with an empty `media` array is a legitimate, honest state (the
+  // page's designed no-GIF hero layout), and since the Machiavelli rebrand
+  // every mood is in it — the catalogue is all text. This test pins the shape
+  // of whatever media a mood DOES carry without pinning how many moods carry
+  // any, so it neither fails on today's all-text catalogue nor stops checking
+  // anything the day someone sources imagery for one.
+  it("gives every populated mood well-formed media entries, and allows a mood to have none", () => {
     for (const m of MOODS) {
       for (const g of m.media) {
         expect(g.url.startsWith("https://")).toBe(true);
