@@ -73,6 +73,63 @@
   "session_metrics": {
     "turn_count": 2
   },
+  "summary": {
+    "intent": "Replace the Ted Lasso quotes/theme on the site's front page with Machiavelli quotes, and then push the resulting changes to the branch.",
+    "outcome": "Rewrote the mood catalogue (10 moods, 35 Machiavelli quotes from The Prince and Discourses on Livy), renamed engine mood ids end-to-end across src and tests, updated docs (README, CLAUDE.md) and page copy (title suffix, catalogue link text), rewrote/adjusted affected tests to keep them honest about the now-media-less catalogue, verified 333 tests pass with clean typecheck and preserved coverage, visually inspected rendered HTML output, and staged changes for push.",
+    "learnings": {
+      "repo": [
+        "All mood/quote/media data lives in src/data/moods.ts as the single source of truth (MOODS array + getMood()), consumed by src/domain/mood.ts (engine), src/app/render.ts, src/app/catalogue.ts, and src/worker.ts — never hardcode mood copy in rendering or engine logic.",
+        "Mood ids are load-bearing: src/domain/mood.ts returns them and snapshots store them, so renaming an id requires touching the engine, worker fallback constant, render.ts fallback constant, and every test fixture referencing that id.",
+        "test/data/moods.test.ts enforces a REQUIRED_IDS list, WCAG accent contrast checks, and well-formedness of media entries — but must not assert on how many moods currently have media, since zero is a legal state.",
+        "Accent hex colors are pre-verified for WCAG contrast against both newsprint stocks in test/data/moods.test.ts; reusing the same accent per engine slot avoids re-verification.",
+        "Media type (gif/image/video) rendering paths in render.ts/catalogue.ts stay in the code even with an empty catalogue — they're exercised via synthetic fixtures in test/domain/quote.test.ts and test/app/render.test.ts rather than real data.",
+        "Repo name, Worker name, and REDIRECT_URI intentionally keep the 'tedlasso-strava' identifier even after a full content rebrand, since renaming them breaks the deployed URL and Strava OAuth callback — only page-facing copy (title, catalogue text) was rebranded.",
+        "catalogue.test.ts's staleness marker test previously aged the clock past the newest verifiedOn to prove the marker renders; with an all-empty media catalogue this became unsatisfiable and was rewritten to assert no marker ever raises regardless of clock."
+      ],
+      "code": [
+        {
+          "path": "src/data/moods.ts",
+          "line": 1,
+          "end_line": 33,
+          "finding": "Quote/Media/Mood interfaces unchanged; Media.kind supports gif/image/video with video intentionally rendered as a link rather than embedded iframe to avoid third-party embeds dominating the page."
+        },
+        {
+          "path": "src/domain/mood.ts",
+          "line": 1,
+          "end_line": 1,
+          "finding": "Contains only the 10 moodId string literals tied to engine branch outcomes — no thresholds or reasons copy lives here, so renaming ids is a pure string-literal swap."
+        },
+        {
+          "path": "src/worker.ts",
+          "line": 1,
+          "end_line": 1,
+          "finding": "Has a PRESEASON_MOOD/PEACETIME_MOOD constant derived via requireMood('peacetime') used as the fallback mood when no snapshot exists yet."
+        },
+        {
+          "path": "test/app/catalogue.test.ts",
+          "line": 44,
+          "end_line": 62,
+          "finding": "Staleness-marker test rewritten to assert MOODS.flatMap(media) is empty and that no clock offset produces a 'stale-marker', since the real isGifStale rule is now only exercised via synthetic data in render.test.ts."
+        }
+      ],
+      "workflow": [
+        "Used superpowers:brainstorming skill plus AskUserQuestion to resolve a scope-defining decision (whether to keep engine ids or remap them) before implementing, since it changed the shape of the whole task.",
+        "Followed TDD: updated test fixtures/ids first (expecting red), ran full suite to confirm expected failures, then rewrote the data file and engine ids, then iterated to green.",
+        "Used python3 heredoc scripts via Bash for bulk find/replace across many files (id renames, quote/fixture swaps) rather than many individual Edit calls — efficient for repetitive mechanical substitutions with asserted preconditions (assert old in t) to catch drift.",
+        "Rendered actual HTML output via a temporary esbuild-bundled dump script (writing page.html/catalogue.html to a scratch dir) to visually verify the change instead of trusting tests alone, then cleaned up the temp script.",
+        "Ran npm run typecheck and npx vitest run --coverage as final verification gates before declaring done."
+      ]
+    },
+    "friction": [
+      "node_modules wasn't installed initially, requiring an npm install detour before tests could run.",
+      "Bulk python3 substitution scripts needed multiple iterations (e.g., path fixups for the esbuild dump script's relative import paths) before the HTML dump actually worked.",
+      "One test (refresh.test.ts's catalogue-GIF verifiedOn propagation test) and one (catalogue.test.ts's staleness marker test) permanently lost real coverage of certain code paths because the new catalogue ships no media — flagged explicitly to the user rather than silently patched over."
+    ],
+    "open_items": [
+      "The two-column quote+media hero layout, staleness marker, and video/still rendering paths are now only covered by synthetic test fixtures, not real catalogue data, since no media currently exists in src/data/moods.ts — future work could source verified Machiavelli-related imagery to re-populate media.",
+      "Changes are committed to branch change-front-page-ted-lasso-quotes-to-be-machiav locally but push to remote had not yet completed in the visible transcript (user asked to push, git add -u and status were run last)."
+    ]
+  },
   "initial_attribution": {
     "calculated_at": "2026-08-25T21:42:19.690131Z",
     "agent_lines": 299,
