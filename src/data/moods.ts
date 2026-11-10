@@ -1,6 +1,13 @@
 export interface Quote {
   text: string;
   character: string;
+  /** Episode reference for sourced additions; legacy quotes may not have one. */
+  source?: {
+    season: number;
+    episode: number;
+    url: string;
+    verifiedOn: string;
+  };
 }
 
 export interface Gif {
@@ -26,6 +33,16 @@ export const MOODS: Mood[] = [
     accent: "#6B7A8F",
     verifiedOn: "2026-08-14",
     quotes: [
+      {
+        text: "We just have to make it our own.",
+        character: "Alice Chilton",
+        source: {
+          season: 4,
+          episode: 7,
+          url: "https://lassoism.com/Ted-Lasso-S04E07.php",
+          verifiedOn: "2026-11-10",
+        },
+      },
       { text: "I believe in hope. I believe in believe.", character: "Ted Lasso" },
       {
         text: "Taking on a challenge is a lot like riding a horse. If you're comfortable while you're doing it, you're probably doing it wrong.",
@@ -123,6 +140,16 @@ export const MOODS: Mood[] = [
     accent: "#2E7D6B",
     verifiedOn: "2026-08-14",
     quotes: [
+      {
+        text: "I'm back, baby!",
+        character: "Coach Beard",
+        source: {
+          season: 4,
+          episode: 2,
+          url: "https://lassoism.com/Ted-Lasso-S04E02.php",
+          verifiedOn: "2026-11-10",
+        },
+      },
       { text: "Be a goldfish.", character: "Ted Lasso" },
       // Corrected from the brief: this is Rebecca Welton quoting a Johan
       // Cruyff line to Ted before the Man City match (S1E10, "The Hope
@@ -149,6 +176,16 @@ export const MOODS: Mood[] = [
     accent: "#8A7B4F",
     verifiedOn: "2026-08-14",
     quotes: [
+      {
+        text: "Yes and, baby.",
+        character: "Coach Beard",
+        source: {
+          season: 4,
+          episode: 7,
+          url: "https://lassoism.com/Ted-Lasso-S04E07.php",
+          verifiedOn: "2026-11-10",
+        },
+      },
       { text: "Barbecue sauce.", character: "Ted Lasso" },
       { text: "Diamond Dogs, assemble!", character: "Ted Lasso" },
       {
@@ -228,11 +265,16 @@ export const MOODS: Mood[] = [
         text: "You beating yourself up is like Woody Allen playing the clarinet. I don't wanna hear it.",
         character: "Ted Lasso",
       },
-      // Unverified: could not confirm this exact phrasing via search within
-      // the time-box (a related but distinct line, "small acts of kindness
-      // make a championship team," turned up instead). Kept as the brief
-      // specifies pending a fan/transcript check.
-      { text: "Small acts of kindness never go unnoticed.", character: "Ted Lasso" },
+      {
+        text: "The only thing at zero percent should be your doubt that it will be done.",
+        character: "Ted Lasso",
+        source: {
+          season: 4,
+          episode: 1,
+          url: "https://lassoism.com/Ted-Lasso-S04E01.php",
+          verifiedOn: "2026-11-10",
+        },
+      },
     ],
     gifs: [],
   },
@@ -250,10 +292,16 @@ export const MOODS: Mood[] = [
         text: "I always figured that tea was gonna taste like hot brown water. And you know what? I was right.",
         character: "Ted Lasso",
       },
-      // Unverified: could not confirm this exact phrasing via search within
-      // the time-box. Kept as the brief specifies pending a fan/transcript
-      // check.
-      { text: "Taking a break is not the same as giving up.", character: "Ted Lasso" },
+      {
+        text: "Wow. Who knew a biscuit could be so healthy and so heavy?",
+        character: "Rebecca Welton",
+        source: {
+          season: 4,
+          episode: 2,
+          url: "https://lassoism.com/Ted-Lasso-S04E02.php",
+          verifiedOn: "2026-11-10",
+        },
+      },
     ],
     gifs: [],
   },
